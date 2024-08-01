@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using UnityEngine;
 using Newtonsoft.Json;
 using Teal;
@@ -17,6 +18,7 @@ using Teal;
 [RequireComponent(typeof(Match))]
 [RequireComponent(typeof(Teams))]
 [DisallowMultipleComponent]
+// ReSharper disable once CheckNamespace
 public class RankBalance : Modifiable
 {
     [JsonProperty("BalanceOnMatchStart")] public bool balanceOnStart = true;
@@ -25,6 +27,7 @@ public class RankBalance : Modifiable
     [JsonProperty("BalanceBots")] public bool balanceBots = true;
     [JsonProperty("AssignOnJoin")] public bool assignOnJoin = true; // only set true, when builtin AutoBalance is off.
     [JsonProperty("AddFillBots")] public bool addFillBots = true;
+    [JsonProperty("AddFillBotMin")] public int addFillBotMin = 6;
     [JsonProperty("MinPlayersForScoreUpdate")] public int minPlayersForScoreUpdate = 4;
     [JsonProperty("MinScoreDeltaForRebalance")] public int minScoreDeltaForRebalance = 3;
     private string basePath = "RankBalance";
@@ -40,112 +43,231 @@ public class RankBalance : Modifiable
     private string scoreFuncName;
     Dictionary<string, object> pubscores;
 
-    private void Awake() {
-        if (!Net.IsServer) return;
-        if (!GetComponent<Teams>().IsTeamsGame()) return;
-        Eventor.AddListener(Events.Player_Joined, OnPlayerJoined);
-        Eventor.AddListener(Events.Player_Left, OnPlayerLeft);
-        Eventor.AddListener(Events.Player_Changed_Team, OnPlayerChangedTeam);
-        Eventor.AddListener(Events.Match_Ended, OnMatchEnd);
-        Eventor.AddListener(Events.Flag_Captured, OnFlagReturned);
-        Eventor.AddListener(Events.Flag_Returned, OnFlagReturned);
-        GameChat.instance.OnChat.AddListener(OnPlayerChat);
+    private void Awake()
+    {
+        int line = 0;
+        try
+        {
+            line = 1;
+            if (!Net.IsServer) return;
+            line = 2;
+            var teams = GetComponent<Teams>();
+            line = 3;
+            if (!teams || !teams.IsTeamsGame()) return;
+            line = 4;
+            
+            Eventor.AddListener(Events.Player_Joined, OnPlayerJoined);
+            Eventor.AddListener(Events.Player_Left, OnPlayerLeft);
+            Eventor.AddListener(Events.Player_Changed_Team, OnPlayerChangedTeam);
+            Eventor.AddListener(Events.Match_Ended, OnMatchEnd);
+            Eventor.AddListener(Events.Flag_Captured, OnFlagReturned);
+            Eventor.AddListener(Events.Flag_Returned, OnFlagReturned);
+            GameChat.instance.OnChat.AddListener(OnPlayerChat);
 
-        // set defaults, likely overriden by LoadConfig()
-        scoreFunc = PlayerRank;
-        scoreFuncName = "rank";
-        LoadConfig();
+            line = 5;
+            // set defaults, likely overriden by LoadConfig()
+            scoreFunc = PlayerRank;
+            line = 6;
+            scoreFuncName = "rank";
+            LoadConfig();
+            line = 7;
 
-        // set initial state
-        currentSpectators = Players.Get.GetSpecators().Count(); // only legit with typos in funcnames
+            // set initial state
+            currentSpectators = Players.Get.GetSpecators().Count; // only legit with typos in funcnames
+            line = 8;
 
-        string filepath = ScorePath();
-        if (FileHelper.Exists(filepath))
-            pubscores = FileHelper.ReadJson(filepath) as Dictionary<string, object>;
-        else
-            pubscores = new Dictionary<string, object>();
+            string filepath = ScorePath();
+            line = 9;
+            if (FileHelper.Exists(filepath))
+                pubscores = FileHelper.ReadJson(filepath);
+            else
+                pubscores = new Dictionary<string, object>();
+            line = 10;
 
-        if (balanceOnStart)
-            BalanceTeams();
+            if (balanceOnStart)
+                BalanceTeams();
+            line = 11;
+        } catch (System.Exception ex) {
+            Debug.Log($"[RankBalance.Awake] @@@@@ ERROR @@@@@ AT LINE " + line);
+            try {
+                Debug.Log($"[RankBalance.Awake] Exception HRESULT " + ex.HResult.ToString("X") + " type " + ex.GetType());
+                Debug.Log($"[RankBalance.Awake] Exception message: " + ex.Message);
+                Debug.Log($"[RankBalance.Awake] Exception trace: " + ex.StackTrace);
+                var baseEx = ex.GetBaseException();
+                Debug.Log($"[RankBalance.Awake] BaseEx: " + baseEx);
+            } catch (System.Exception ex2) {
+                Debug.Log($"[RankBalance.Awake] Another exception occured inside handler, HRESULT " + ex2.HResult.ToString("X") + " type " + ex2.GetType());
+            }
+        }
     }
 
     private void OnDestroy() {
-        if (!Net.IsServer) return;
-        if (!GetComponent<Teams>().IsTeamsGame()) return;
-        Eventor.RemoveListener(Events.Player_Joined, OnPlayerJoined);
-        Eventor.RemoveListener(Events.Player_Left, OnPlayerLeft);
-        Eventor.RemoveListener(Events.Player_Changed_Team, OnPlayerChangedTeam);
-        Eventor.RemoveListener(Events.Match_Ended, OnMatchEnd);
-        Eventor.RemoveListener(Events.Flag_Captured, OnFlagReturned);
-        Eventor.RemoveListener(Events.Flag_Returned, OnFlagReturned);
-        GameChat.instance.OnChat.RemoveListener(OnPlayerChat);
+        try
+        {
+            //if (!Net.IsServer) return;
+            //if (!GetComponent<Teams>().IsTeamsGame()) return;
+            Eventor.RemoveListener(Events.Player_Joined, OnPlayerJoined);
+            Eventor.RemoveListener(Events.Player_Left, OnPlayerLeft);
+            Eventor.RemoveListener(Events.Player_Changed_Team, OnPlayerChangedTeam);
+            Eventor.RemoveListener(Events.Match_Ended, OnMatchEnd);
+            Eventor.RemoveListener(Events.Flag_Captured, OnFlagReturned);
+            Eventor.RemoveListener(Events.Flag_Returned, OnFlagReturned);
+            GameChat.instance.OnChat.RemoveListener(OnPlayerChat);
+        } catch (System.Exception ex) {
+            Debug.Log($"[RankBalance.OnDestroy] @@@@@ ERROR @@@@@");
+            try {
+                Debug.Log($"[RankBalance.OnDestroy] Exception HRESULT " + ex.HResult.ToString("X") + " type " + ex.GetType());
+                Debug.Log($"[RankBalance.OnDestroy] Exception message: " + ex.Message);
+                Debug.Log($"[RankBalance.OnDestroy] Exception trace: " + ex.StackTrace);
+            } catch (System.Exception ex2) {
+                Debug.Log($"[RankBalance.OnDestroy] Another exception occured inside handler, HRESULT " + ex2.HResult.ToString("X") + " type " + ex2.GetType());
+            }
+        }
     }
 
     void OnMatchEnd (IGameEvent ev) {
-        SavePlayerScores();
+        try {
+            SavePlayerScores();
+            playersJoinedMidGame.Clear();
+        } catch (System.Exception ex) {
+            Debug.Log($"[RankBalance.OnMatchEnd] @@@@@ ERROR @@@@@");
+            try {
+                Debug.Log($"[RankBalance.OnMatchEnd] Exception HRESULT " + ex.HResult.ToString("X") + " type " + ex.GetType());
+                Debug.Log($"[RankBalance.OnMatchEnd] Exception message: " + ex.Message);
+                Debug.Log($"[RankBalance.OnMatchEnd] Exception trace: " + ex.StackTrace);
+            } catch (System.Exception ex2) {
+                Debug.Log($"[RankBalance.OnMatchEnd] Another exception occured inside handler, HRESULT " + ex2.HResult.ToString("X") + " type " + ex2.GetType());
+            }
+        }
     }
 
     void OnPlayerJoined(IGameEvent ev) {
-        Player p = ((GlobalPlayerEvent)ev).Player;
-        playersJoinedMidGame.Add(PlayerPFID(p));
-
-        var teams = GetComponent<Teams>().teams;
-        int scoreDelta = System.Math.Abs(teams[0].score - teams[1].score);
-
-        // we dont want to balance on join. or do we? only when score diff is high? when num players joined / left is high? rankdelta is high?
-
-        ManageFillBots();
-
-        if (balanceOnPlayerChange && scoreDelta >= minScoreDeltaForRebalance) {
-            if (BalanceIfAllowed(false))
+		try {
+			Player p = ((GlobalPlayerEvent)ev).Player;
+            if (!p)
                 return;
-        }
+            if (p.IsBot())
+            {
+                if (assignOnJoin) {
+                    int players0 = GetHumansOfTeamExcept(0, p).Count();
+                    int players1 = GetHumansOfTeamExcept(1, p).Count();
+                    if (players0 == players1)
+                        AssignTeam(p, NextTeam(WinningTeam()));
+                    else
+                        AssignTeam(p, players1 < players0 ? 1 : 0);
+                }
+            }
+            
+			playersJoinedMidGame.Add(PlayerPFID(p));
 
-        if (assignOnJoin) {
-            int players0 = GetHumansOfTeamExcept(0, p).Count();
-            int players1 = GetHumansOfTeamExcept(1, p).Count();
-            if (players0 == players1)
-                AssignTeam(p, NextTeam(WinningTeam()));
-            else
-                AssignTeam(p, players1 < players0 ? 1 : 0);
-        }
+			var teams = GetComponent<Teams>().teams;
+			int scoreDelta = System.Math.Abs(teams[0].score - teams[1].score);
+
+			// we dont want to balance on join. or do we? only when score diff is high? when num players joined / left is high? rankdelta is high?
+
+			ManageFillBots();
+
+			if (balanceOnPlayerChange && scoreDelta >= minScoreDeltaForRebalance) {
+				if (BalanceIfAllowed(false))
+					return;
+			}
+
+			if (assignOnJoin) {
+				int players0 = GetHumansOfTeamExcept(0, p).Count();
+				int players1 = GetHumansOfTeamExcept(1, p).Count();
+				if (players0 == players1)
+					AssignTeam(p, NextTeam(WinningTeam()));
+				else
+					AssignTeam(p, players1 < players0 ? 1 : 0);
+			}
+		} catch (System.Exception ex) {
+			Debug.Log($"[RankBalance.OnPlayerJoined] @@@@@ ERROR @@@@@");
+			try {
+				Debug.Log($"[RankBalance.OnPlayerJoined] Exception HRESULT " + ex.HResult.ToString("X") + " type " + ex.GetType());
+				Debug.Log($"[RankBalance.OnPlayerJoined] Exception message: " + ex.Message);
+				Debug.Log($"[RankBalance.OnPlayerJoined] Exception trace: " + ex.StackTrace);
+			} catch (System.Exception ex2) {
+				Debug.Log($"[RankBalance.OnPlayerJoined] Another exception occured inside handler, HRESULT " + ex2.HResult.ToString("X") + " type " + ex2.GetType());
+			}
+		}
     }
 
     void OnPlayerLeft(IGameEvent ev) {
-        ManageFillBots();
-        if (balanceOnPlayerChange)
-            BalanceIfAllowed(false);
+        try {
+            Player p = ((GlobalPlayerEvent)ev).Player;
+            if (!p || p.IsBot())
+                return;
+            ManageFillBots();
+            if (balanceOnPlayerChange)
+                BalanceIfAllowed(false);
+        } catch (System.Exception ex) {
+            Debug.Log($"[RankBalance.OnPlayerLeft] @@@@@ ERROR @@@@@");
+            try {
+                Debug.Log($"[RankBalance.OnPlayerLeft] Exception HRESULT " + ex.HResult.ToString("X") + " type " + ex.GetType());
+                Debug.Log($"[RankBalance.OnPlayerLeft] Exception message: " + ex.Message);
+                Debug.Log($"[RankBalance.OnPlayerLeft] Exception trace: " + ex.StackTrace);
+            } catch (System.Exception ex2) {
+                Debug.Log($"[RankBalance.OnPlayerLeft] Another exception occured inside handler, HRESULT " + ex2.HResult.ToString("X") + " type " + ex2.GetType());
+            }
+        }
     }
 
     void OnPlayerChangedTeam(IGameEvent ev) {
-        // whenever a player goes into / leaves spectator, treat is as if a player left.
-        int count = Players.Get.GetSpecators().Count();
-        if (count != currentSpectators && balanceOnPlayerChange)
-            OnPlayerLeft(ev);
-        currentSpectators = count;
+        try {
+            // whenever a player goes into / leaves spectator, treat is as if a player left.
+            Player p = ((GlobalPlayerEvent)ev).Player;
+            if (!p || p.IsBot())
+                return;
+            int count = Players.Get.GetSpecators().Count();
+            if (count != currentSpectators && balanceOnPlayerChange)
+                OnPlayerLeft(ev);
+            currentSpectators = count;
+        } catch (System.Exception ex) {
+            Debug.Log($"[RankBalance.OnPlayerChangedTeam] @@@@@ ERROR @@@@@");
+            try {
+                Debug.Log($"[RankBalance.OnPlayerChangedTeam] Exception HRESULT " + ex.HResult.ToString("X") + " type " + ex.GetType());
+                Debug.Log($"[RankBalance.OnPlayerChangedTeam] Exception message: " + ex.Message);
+                Debug.Log($"[RankBalance.OnPlayerChangedTeam] Exception trace: " + ex.StackTrace);
+            } catch (System.Exception ex2) {
+                Debug.Log($"[RankBalance.OnPlayerChangedTeam] Another exception occured inside handler, HRESULT " + ex2.HResult.ToString("X") + " type " + ex2.GetType());
+            }
+        }
     }
 
     void OnPlayerChat(Player p, string msg) {
-        if (p == null) return;
-        IEnumerable<string> args = msg.Split(' ').ToList();
-        string cmd = args.First();
-        args = args.Skip(1);
-        if (cmd == "!switch")
-            OnSwitchCmd(p, args);
-        else if ((balanceOnCommand || IsAdmin(p)) && cmd.StartsWith("!bal"))
-            OnBalanceCmd(p);
-        else if (IsAdmin(p) && cmd == "!scores")
-            OnScoresCmd(p);
-        else if (IsAdmin(p) && cmd.StartsWith("!set")) {
-            string arg = args.First();
-            if (arg.StartsWith("scorefun") && args.ToList().Count() == 2)
-                SetScoreFunc(args.ToList()[1], true);
-            else if (arg.Contains("bot"))
-                addFillBots = !addFillBots;
-            else if (arg.Contains("change"))
-                balanceOnPlayerChange = !balanceOnPlayerChange;
-            else return;
-            SaveConfig();
+        try {
+            if (!p) return;
+            IEnumerable<string> args = msg.Split(' ').ToList();
+            string cmd = args.First();
+            args = args.Skip(1);
+            if (cmd.StartsWith("!switch"))
+                OnSwitchCmd(p, args);
+            else if ((balanceOnCommand || IsAdmin(p)) && cmd.StartsWith("!bal"))
+                OnBalanceCmd(p);
+            else if (IsAdmin(p) && cmd.StartsWith("!scores"))
+                OnScoresCmd(p);
+            else if (IsAdmin(p) && cmd.StartsWith("!set")) {
+                string arg = args.First();
+                if (arg.StartsWith("scorefun") && args.ToList().Count() == 2)
+                    SetScoreFunc(args.ToList()[1], true);
+                if (arg.StartsWith("fill") && args.ToList().Count() == 2)
+                    addFillBotMin = System.Int32.Parse(args.ToList()[1]);
+                else if (arg.StartsWith("bot"))
+                    addFillBots = !addFillBots;
+                else if (arg.Contains("change"))
+                    balanceOnPlayerChange = !balanceOnPlayerChange;
+                else return;
+                SaveConfig();
+            }
+        } catch (System.Exception ex) {
+            Debug.Log($"[RankBalance.OnPlayerChat] @@@@@ ERROR @@@@@");
+            try {
+                Debug.Log($"[RankBalance.OnPlayerChat] Exception HRESULT " + ex.HResult.ToString("X") + " type " + ex.GetType());
+                Debug.Log($"[RankBalance.OnPlayerChat] Exception message: " + ex.Message);
+                Debug.Log($"[RankBalance.OnPlayerChat] Exception trace: " + ex.StackTrace);
+            } catch (System.Exception ex2) {
+                Debug.Log($"[RankBalance.OnPlayerChat] Another exception occured inside handler, HRESULT " + ex2.HResult.ToString("X") + " type " + ex2.GetType());
+            }
         }
     }
 
@@ -173,7 +295,7 @@ public class RankBalance : Modifiable
             return;
         foreach (string name in playerNames) {
             Player p = FindPlayerByName(name);
-            if (p == null)
+            if (p )
                 GameChat.instance.ServerChat($"warn: no player matched for '{name}'", caller.id);
             else
                 AssignTeam(p, NextTeam(p.GetTeam()));
@@ -181,35 +303,75 @@ public class RankBalance : Modifiable
     }
 
     void OnFlagReturned(IGameEvent ev) {
-        Flag flag = ev.Sender.GetComponent<Flag>();
-        if (balanceScheduled) {
-            if (BalanceProhibited(balanceScheduledManually)) {
-                if (balanceScheduledManually)
-                    GameChat.instance.ServerChat($"Scheduled balancing canceled due to time constraints.");
-                else
-                    GameChat.ChatOrLog($"Scheduled balancing canceled due to time constraints.");
-            } else {
-                if (BalanceTeams() > 0)
-                    lastBalanceAt = RealTime.timeSinceLevelLoad;
+        try {
+            Flag flag = ev.Sender.GetComponent<Flag>();
+            if (balanceScheduled) {
+                if (BalanceProhibited(balanceScheduledManually)) {
+                    if (balanceScheduledManually)
+                        GameChat.instance.ServerChat($"Scheduled balancing canceled due to time constraints.");
+                    else
+                        GameChat.ChatOrLog($"Scheduled balancing canceled due to time constraints.");
+                } else {
+                    if (BalanceTeams() > 0)
+                        lastBalanceAt = RealTime.timeSinceLevelLoad;
+                }
+                balanceScheduled = false;
+                balanceScheduledManually = false;
             }
-            balanceScheduled = false;
-            balanceScheduledManually = false;
+        } catch (System.Exception ex) {
+            Debug.Log($"[RankBalance.OnFlagReturned] @@@@@ ERROR @@@@@");
+            try {
+                Debug.Log($"[RankBalance.OnFlagReturned] Exception HRESULT " + ex.HResult.ToString("X") + " type " + ex.GetType());
+                Debug.Log($"[RankBalance.OnFlagReturned] Exception message: " + ex.Message);
+                Debug.Log($"[RankBalance.OnFlagReturned] Exception trace: " + ex.StackTrace);
+            } catch (System.Exception ex2) {
+                Debug.Log($"[RankBalance.OnFlagReturned] Another exception occured inside handler, HRESULT " + ex2.HResult.ToString("X") + " type " + ex2.GetType());
+            }
         }
     }
 
-    void LoadConfig() {
-        string filepath = ConfigPath();
-        if (!FileHelper.Exists(filepath)) return;
-        Dictionary<string, object> conf = FileHelper.ReadJson(filepath) as Dictionary<string, object>;
-        if (conf.ContainsKey("scoreFunc")) SetScoreFunc(conf["scoreFunc"] as string);
-        if (conf.ContainsKey("addFillBots")) addFillBots = (bool)(conf["addFillBots"] as bool?);
-        if (conf.ContainsKey("balanceOnPlayerChange")) balanceOnPlayerChange = (bool)(conf["balanceOnPlayerChange"] as bool?);
+    void LoadConfig()
+    {
+        var line = 0;
+        try
+        {
+            line = 1;
+            string filepath = ConfigPath();
+            line = 2;
+            if (!FileHelper.Exists(filepath)) return;
+            line = 3;
+            Dictionary<string, object> conf = FileHelper.ReadJson(filepath) as Dictionary<string, object>;
+            line = 4;
+            if (conf.ContainsKey("scoreFunc"))
+            {
+                var res = conf["scoreFunc"] as string ?? scoreFuncName;
+                SetScoreFunc(res);
+            }
+            line = 5;
+            if (conf.ContainsKey("addFillBots")) addFillBots = (bool?)conf["addFillBots"] ?? addFillBots;
+            line = 6;
+            if (conf.ContainsKey("addFillBotMin")) Debug.Log("addFillBotMin is " + conf["addFillBotMin"] + " type is " + conf["addFillBotMin"].GetType());
+            if (conf.ContainsKey("addFillBotMin")) addFillBotMin = (int?)(long?)conf["addFillBotMin"] ?? addFillBotMin;
+            line = 7;
+            if (conf.ContainsKey("balanceOnPlayerChange")) balanceOnPlayerChange = (bool?)conf["balanceOnPlayerChange"] ?? balanceOnPlayerChange;
+            line = 8;
+        } catch (System.Exception ex) {
+            Debug.Log($"[RankBalance.LoadConfig] @@@@@ ERROR @@@@@ AT LINE " + line);
+            try {
+                Debug.Log($"[RankBalance.LoadConfig] Exception HRESULT " + ex.HResult.ToString("X") + " type " + ex.GetType());
+                Debug.Log($"[RankBalance.LoadConfig] Exception message: " + ex.Message);
+                Debug.Log($"[RankBalance.LoadConfig] Exception trace: " + ex.StackTrace);
+            } catch (System.Exception ex2) {
+                Debug.Log($"[RankBalance.LoadConfig] Another exception occured inside handler, HRESULT " + ex2.HResult.ToString("X") + " type " + ex2.GetType());
+            }
+        }
     }
 
     void SaveConfig() {
         FileHelper.WriteJson(ConfigPath(), new Dictionary<string, object>() {
             {"scoreFunc",scoreFuncName},
             {"addFillBots",addFillBots},
+            {"addFillBotMin",addFillBotMin},
             {"balanceOnPlayerChange",balanceOnPlayerChange},
         });
     }
@@ -222,7 +384,7 @@ public class RankBalance : Modifiable
             scoreFuncName = "pub score";
         } else if (name.ToLower().StartsWith("rank")) {
             if (interactive) GameChat.instance.ServerChat($"Next balance based on rankedings");
-            else GameChat.ChatOrLog($"Next balance based on pub scores");
+            else GameChat.ChatOrLog($"Next balance based on rankedings scores");
             scoreFunc = PlayerRank;
             scoreFuncName = "rank";
         }
@@ -231,8 +393,8 @@ public class RankBalance : Modifiable
     void ManageFillBots() {
         if (!addFillBots) return;
         int pcount = Players.Get.GetHumansNonSpectator().Count();
-        int botcount = 2;
-        if (pcount > 4) {
+        int botcount = addFillBotMin;
+        if (pcount > addFillBotMin) {
             if (pcount % 2 == 0) botcount = pcount;
             else botcount = pcount + 1;
         }
@@ -566,8 +728,8 @@ public class RankBalance : Modifiable
         // if a player (or bot) is unranked, this returns 0 - to make these players count better, we increment the rank by 3.
         // NOTE: its not clear which rank this is.. probably CTF-Standard-6
         // FIXME: this value is set a couple seconds after a player has joined (API latency is bad...), it returns 0 in the meantime.
-        if (p.IsBot()) return 0f;
-        return (float)(byte)p.props["rank"] + 3f;
+        //if (p.IsBot()) return 0f;
+        return (float)(byte)p.props["rank"] + (p.IsBot() ? 0f : 3f);
     }
 
     bool IsAdmin(Player p) { 

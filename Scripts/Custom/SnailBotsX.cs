@@ -1,5 +1,5 @@
 /**
- * AimBotsfor Soldat 2
+ * BotsX for Soldat 2, based on SnailBots by RetiredSnail
  * - Make bots rek people?
  *
  * Soldat 2 Community License:
@@ -15,303 +15,516 @@ using System.Collections;
 using System.Collections.Generic;
 using System;
 using System.Diagnostics;
+//using System.Diagnostics;
+using Debug = UnityEngine.Debug;
+using Random = System.Random;
 
 
-
-public class SnailBots: MonoBehaviour
+// ReSharper disable once CheckNamespace
+public class SnailBotsX: MonoBehaviour
 {
-	class Waypoint {
-		public static List<Waypoint> _allWaypoints = new List<Waypoint>();
-		public static List<Waypoint> _allWaypoints2 = new List<Waypoint>();
-		
-		public bool visited = false;
-		public Vector2 point = new Vector2(0,0);
-		private RaycastHit2D[] raycastResults = new RaycastHit2D[2];
-		public List<Waypoint> neighbours = new List<Waypoint>();
-		private static System.Random rand = new System.Random();
-		public float dir = 0.0f;
-		public static int raycastLayer = LayerMask.GetMask(new string[]{"Gostek","Ground"});
-		
-		public Waypoint(Vector2 point) {
-			this.point = point;
-			this.visited = false;
-			this.dir = 0.0f;
-		}
-		
-		public Waypoint(Vector2 point, float dir) {
-			this.point = point;
-			this.visited = false;
-			this.dir = dir;
-		}
+    private class PriorityQueue<T> {
+        private List<KeyValuePair<T, float>> elements = new List<KeyValuePair<T, float>>();
 
-		
-		public void TryAddNeighbour(Waypoint neighbour) {
-			Vector2 toNeighbour = neighbour.point - point;
-			int hits = Physics2D.RaycastNonAlloc(point, toNeighbour, raycastResults, toNeighbour.magnitude, raycastLayer);
-			if(hits == 0) 
-				neighbours.Add(neighbour);
-		}
-		
-		private bool CanSeePoint(Vector2 thepoint) {
-			Vector2 toPoint = thepoint - this.point;
-			int hits = Physics2D.RaycastNonAlloc(point, toPoint, raycastResults, toPoint.magnitude, raycastLayer);
-			if(hits > 0) {
-				return false;
-			}
-			return true;
-		}
-		
-		public static void ComputeNeighbours() {
-			foreach(Waypoint wp in _allWaypoints) {
-				foreach(Waypoint wp2 in _allWaypoints) {
-					wp.TryAddNeighbour(wp2);
-				}
-			}
-		}
-		
-		public static void GenerateWaypoints() {
-			_allWaypoints.Clear();
-			_allWaypoints2.Clear();
-			
-			foreach (PropModel pm in GameObject.FindObjectsOfType<PropModel>()) {
-				if (pm.mapData.model == "SM_Prop_Sign_01") {
-					_allWaypoints.Add(new Waypoint((Vector2)pm.transform.position));
-				} /*else if (pm.mapData.model == "SM_Prop_Sign_Stop_01") {
-					_allWaypoints2.Add(new Waypoint((Vector2)pm.transform.position, 1.0f));
-				}*/
-			}
-			
-			if(_allWaypoints.Count < 4) {
-				GenerateWaypointsEx();
-			}
-		}
-		
-		public static void GenerateWaypointsEx() {
-			int maxX = (int)(Map.Get.scale.x*2*Map.Get.width*7);
-			int maxY = (int)(Map.Get.scale.y*Map.Get.height*7);
-			
-			Collider2D[] results = new Collider2D[1];
-			int i = 0;
-			while(i < 48) {
-				int x = rand.Next(maxX);
-				int y = rand.Next(maxY);
-				
-				int hits = Physics2D.OverlapPointNonAlloc(new Vector2(x, y), results, raycastLayer);
-				
-				if(hits < 1) {
-					_allWaypoints.Add(new Waypoint(new Vector2(x,y)));
-					i++;
-				}
-			}
-		}
-		
-		public static void HideWaypoints() {
-			foreach(PropModel pm in GameObject.FindObjectsOfType<PropModel>()) {
-				if(pm.mapData.model == "SM_Prop_Sign_01")
-					pm.transform.position = new Vector3(-10, -10, 0); // move it out of the way :)
-			}
-		}
-		
-		public static Waypoint FindHighestVisible(Vector2 vec) {
-			Waypoint bestWaypoint = null;
-			
-			foreach(Waypoint wp in _allWaypoints) {
-				if(wp.CanSeePoint(vec)) {
-					if(bestWaypoint == null)
-						bestWaypoint = wp;
-					else {
-						if(wp.point.y > bestWaypoint.point.y)
-							bestWaypoint = wp;
-					}
-				}
-			}
-			
-			return bestWaypoint;
-		}
-		
-		public static Waypoint FindLowestVisible(Vector2 vec) {
-			Waypoint bestWaypoint = null;
-			
-			foreach(Waypoint wp in _allWaypoints) {
-				if(wp.CanSeePoint(vec)) {
-					if(bestWaypoint == null)
-						bestWaypoint = wp;
-					else {
-						if(wp.point.y < bestWaypoint.point.y)
-							bestWaypoint = wp;
-					}
-				}
-			}
-			
-			return bestWaypoint;
-		}
-		
-		public static Waypoint FindVisibleWaypoint(Vector2 vec, Vector2 vec2, float dir) {
-			SnailBot.lineReached = 1000;
-			Waypoint bestWaypointX = null;
-			
-			if(_allWaypoints2.Count != 0) {
-				SnailBot.lineReached = 1001;
-				foreach(Waypoint wp2 in _allWaypoints2) {
-					SnailBot.lineReached = 1002;
-					if(dir > 0) {
-						if(wp2.dir < 0)
-							continue;
-						
-						if(bestWaypointX == null) {
-							if(wp2.CanSeePoint(vec))
-								bestWaypointX = wp2;
-						}
-						else {
-							if(bestWaypointX.point.x > wp2.point.x)
-								if(wp2.CanSeePoint(vec))
-									bestWaypointX = wp2;
-						}
-					} else {
-						if(wp2.dir > 0)
-							continue;
-						
-						if(bestWaypointX == null) {
-							if(wp2.CanSeePoint(vec))
-								bestWaypointX = wp2;
-						}
-						else {
-							if(bestWaypointX.point.x < wp2.point.x)
-								if(wp2.CanSeePoint(vec))
-									bestWaypointX = wp2;
-						}
-					}
-				}
-				
-				SnailBot.lineReached = 1500;
-				
-				if(bestWaypointX != null) {
-					return bestWaypointX;
-				}
-			}
-			
-			Waypoint bestWaypoint = null;
-			Waypoint perfectWaypoint = null;
-			
-			foreach(Waypoint wp in _allWaypoints) {
-				if(wp.CanSeePoint(vec)) {
-					if(wp.CanSeePoint(vec2)) {
-						if(perfectWaypoint == null) {
-							perfectWaypoint = wp;
-						} else {
-							if(dir > 0) {
-								if (wp.point.x > perfectWaypoint.point.x)
-									perfectWaypoint = wp;
-							} else {
-								if (wp.point.x < perfectWaypoint.point.x)
-									perfectWaypoint = wp;
-							}
-						}
-					} else {
-						if(bestWaypoint == null) {
-							bestWaypoint = wp;
-						} else {
-							if (dir > 0) {
-								if (wp.point.x > bestWaypoint.point.x)
-									bestWaypoint = wp;
-							} else {
-								if (wp.point.x < bestWaypoint.point.x)
-									bestWaypoint = wp;
-							}
-						}
-					}
-				}
-			}
-			
-			if(perfectWaypoint != null)
-				return perfectWaypoint;
-			
-			
-			return bestWaypoint;
-		}
-		
-		public static void InitializePathFinding() {
-			GenerateWaypoints();
-			ComputeNeighbours();
-			HideWaypoints();
-		}
-		
-		public static Waypoint GetRandom() {
-			if(_allWaypoints.Count == 0)
-				return null;
-			
-			return _allWaypoints[rand.Next(_allWaypoints.Count)];
-		}
-		
-		public static Queue<Waypoint> FindPath(Vector2 vFrom, Vector2 vTo) {
-			// Find a start and end point
-			Waypoint wpStart = null;
-			Waypoint wpEnd = null;
-			
-			foreach(Waypoint wp in _allWaypoints) {
-				wp.visited = false;
-			}
-			
-			foreach(Waypoint wp in _allWaypoints) {
-				if (wp.CanSeePoint(vTo)) {
-					wpStart = wp;
-					break;
-				}
-			}
-			
-			foreach(Waypoint wp in _allWaypoints) {
-				if (wp.CanSeePoint(vFrom)) {
-					wpEnd = wp;
-					break;
-				}
-			}
-			
-			if (wpStart == null) {
-				GameChat.ChatOrLog("{PATH FINDING COULD NOT LOCATE START POINT}");
-			} else {
-				GameChat.ChatOrLog("{START POINT FOUND AT " + wpStart.point.ToString() + "}");
-			}
-			
-			if (wpEnd == null) {
-				GameChat.ChatOrLog("{PATH FINDING COULD NOT LOCATE END POINT}");
-			} else {
-				GameChat.ChatOrLog("{END POINT FOUND AT " + wpEnd.point.ToString() + "}");
-			}
-			
-			Queue<Waypoint> path = new Queue<Waypoint>();
-			
-			if(PathFromTo(wpStart, wpEnd, path)) {
-				foreach(Waypoint wp in path) {
-					GameChat.ChatOrLog("{WP: " + wp.point.ToString() + "}");
-				}
-				return path;
-			}
-				
-			return null;
-		}
-		
-		private static bool PathFromTo(Waypoint wpStart, Waypoint wpEnd, Queue<Waypoint> path) {
-			if(wpStart.visited)
-				return false;
-			
-			wpStart.visited = true;
-			
-			foreach(Waypoint neighbour in wpStart.neighbours) {
-				if(neighbour == wpEnd) {
-					GameChat.ChatOrLog("ROUTE FOUND!");
-					path.Enqueue(wpEnd);
-					return true;
-				} else {
-					if (PathFromTo(neighbour, wpEnd, path)) {
-						path.Enqueue(wpStart);
-						return true;
-					}
-				}
-			}
-			
-			return false;
-		}
-	}
+        public int Count {
+            get { return elements.Count; }
+        }
+
+        public void Enqueue(T item, float priority) {
+            elements.Add(new KeyValuePair<T, float>(item, priority));
+        }
+
+        public T Dequeue() {
+            int bestIndex = 0;
+
+            for (int i = 0; i < elements.Count; i++) {
+                if (elements[i].Value < elements[bestIndex].Value) {
+                    bestIndex = i;
+                }
+            }
+
+            T bestItem = elements[bestIndex].Key;
+            elements.RemoveAt(bestIndex);
+            return bestItem;
+        }
+
+        public bool Contains(T item) {
+            return elements.Exists(x => x.Key.Equals(item));
+        }
+    }
+    public class NavX {
+        static readonly float sqrt2 = (float)Math.Sqrt(2);
+        [Flags]
+        public enum Dirs {
+            Zero = 0,
+            Up = 1 << 0,
+            Right = 1 << 1,
+            Down = 1 << 2,
+            Left = 1 << 3,
+            UpRight = 1 << 4,
+            DownRight = 1 << 5,
+            DownLeft = 1 << 6,
+            UpLeft = 1 << 7
+        }
+
+        public static Vector2 DirToVec(Dirs dir)
+        {
+            switch (dir)
+            {
+                case Dirs.Up:
+                    return Vector2.up;
+                case Dirs.Right:
+                    return Vector2.right;
+                case Dirs.Down:
+                    return Vector2.down;
+                case Dirs.Left:
+                    return Vector2.left;
+                case Dirs.UpRight:
+                    return Vector2.up + Vector2.right;
+                case Dirs.DownRight:
+                    return Vector2.down + Vector2.right;
+                case Dirs.DownLeft:
+                    return Vector2.down + Vector2.left;
+                case Dirs.UpLeft:
+                    return Vector2.up + Vector2.left;
+                case Dirs.Zero:
+                default:
+                    return Vector2.zero;
+            }
+        }
+
+        public static (int, int) DirToXY(Dirs dir)
+        {
+            switch (dir)
+            {
+                case Dirs.Up:
+                    return (0, 1);
+                case Dirs.Right:
+                    return (1, 0);
+                case Dirs.Down:
+                    return (0, -1);
+                case Dirs.Left:
+                    return (-1, 0);
+                case Dirs.UpRight:
+                    return (1, 1);
+                case Dirs.DownRight:
+                    return (1, -1);
+                case Dirs.DownLeft:
+                    return (-1, -1);
+                case Dirs.UpLeft:
+                    return (-1, 1);
+                case Dirs.Zero:
+                default:
+                    return (0, 0);
+            }
+        }
+        
+        public static float DirToDist(Dirs dir)
+        {
+            switch (dir)
+            {
+                case Dirs.Up:
+                case Dirs.Right:
+                case Dirs.Down:
+                case Dirs.Left:
+                    return 1f;
+                case Dirs.UpRight:
+                case Dirs.DownRight:
+                case Dirs.DownLeft:
+                case Dirs.UpLeft:
+                    return sqrt2;
+                case Dirs.Zero:
+                default:
+                    return float.PositiveInfinity;
+            }
+        }
+        
+        public static Dirs XYToDir(int x, int y)
+        {
+            if (x == 0)
+            {
+                if (y > 0)
+                    return Dirs.Up;
+                return Dirs.Down;
+            }
+            if (x > 0)
+            {
+                if (y > 0)
+                    return Dirs.UpRight;
+                else if (y == 0)
+                    return Dirs.Right;
+                return Dirs.DownRight;
+            }
+            if (y > 0)
+                return Dirs.UpLeft;
+            else if (y == 0)
+                return Dirs.Left;
+            return Dirs.DownLeft;
+        }
+        public class NavPoint {
+            public int xi;
+            public int yi;
+            public Vector2 pos;
+            public Dirs dirs;
+            public List<(NavPoint, float)> neighbors;
+
+            public NavPoint(int x, int y, Vector2 newPos) {
+                xi = x;
+                yi = y;
+                pos = newPos;
+                dirs = Dirs.Zero;
+            }
+
+            public override string ToString()
+            {
+	            return "P(" + xi + "," + yi + ")";
+            } 
+        }
+        public static bool Ready = false;
+        public static int PointsX = -1;
+        public static int PointsY = -1;
+        public static float PointTargetScale = 2.0f;
+
+        private static float Heuristic(NavPoint a, NavPoint b)
+        {
+            return Vector2.Distance(a.pos, b.pos);
+        }
+        public static NavPoint[,] Grid = null;
+        public static List<NavPoint> AllPoints = null;
+
+        public static LayerMask PathMask;
+        
+        
+        static List<NavPoint> GetNeigbors(NavPoint start) {
+            var res = new List<NavPoint>();
+            int x = start.xi;
+            int y = start.yi;
+            foreach (Dirs value in Enum.GetValues(typeof(Dirs)))
+            {
+                if (start.dirs.HasFlag(value))
+                {
+                    var (xs, ys) = DirToXY(value);
+                    NavPoint neighbor = GetPoint(x + xs, y + ys);
+                    if (neighbor != null)
+                    {
+                        res.Add(neighbor);
+                    }
+                }
+            }
+
+            return res;
+        }
+        
+        static List<(NavPoint, float)> GetNeigborsDist(NavPoint start) {
+            var res = new List<(NavPoint, float)>();
+            int x = start.xi;
+            int y = start.yi;
+            foreach (Dirs value in Enum.GetValues(typeof(Dirs)))
+            {
+                if (start.dirs.HasFlag(value))
+                {
+                    var (xs, ys) = DirToXY(value);
+                    NavPoint neighbor = GetPoint(x + xs, y + ys);
+                    if (neighbor != null)
+                    {
+                        res.Add((neighbor, DirToDist(value)));
+                    }
+                }
+            }
+
+            return res;
+        }
+
+        public static Vector2 PointsCoordPos(int x, int y)
+        {
+            Map map = Map.Get;
+            Bounds bounds = map.bounds;
+            return (Vector2)bounds.min + new Vector2(x * PointTargetScale, y * PointTargetScale);
+        }
+        
+        public static NavPoint GetPoint(int x, int y)
+        {
+            if (x < 0 || y < 0 || x >= PointsX || y >= PointsY)
+                return null;
+            return Grid[x, y];
+        }
+
+        public static NavPoint GetNearestPoint(Vector2 vec)
+        {
+            NavPoint result = null;
+            float bestDistance = float.PositiveInfinity;
+            int px = Math.Min((int)Math.Floor(vec.x / PointTargetScale), PointsX-1);
+            int py = Math.Min((int)Math.Floor(vec.y / PointTargetScale), PointsY-1);
+            for (int xs = 0; xs <= 1; xs++)
+            {
+                for (int ys = 0; ys <= 1; ys++)
+                {
+                    NavPoint cur = GetPoint(px + xs, py + ys);
+                    if (cur != null)
+                    {
+                        Vector2 delta = cur.pos - vec;
+                        float curDistance = delta.sqrMagnitude;
+                        if (curDistance > bestDistance)
+                            continue;
+                        
+                        result = cur;
+                        bestDistance = curDistance;
+                    }
+                }
+            }
+
+            if (result != null) return result;
+            
+            // TODO: replace with smarter expansion algorithm
+            for (int x = 0; x < Grid.GetLength(0); x++)
+            {
+                for (int y = 0; y < Grid.GetLength(1); y++)
+                {
+                    NavPoint cur = GetPoint(x, y);
+                    if (cur != null)
+                    {
+                        Vector2 delta = cur.pos - vec;
+                        float curDistance = delta.sqrMagnitude;
+                        if (curDistance > bestDistance)
+                            continue;
+                    
+                        result = cur;
+                        bestDistance = curDistance;
+                    }
+                }
+            }
+            return result;
+        }
+
+        public static NavPoint GetNearestVisiblePoint(Vector2 vec)
+        {
+            NavPoint result = null;
+            float bestDistance = float.PositiveInfinity;
+            int px = Math.Min((int)Math.Floor(vec.x / PointTargetScale), PointsX-1);
+            int py = Math.Min((int)Math.Floor(vec.y / PointTargetScale), PointsY-1);
+            var rayResults = new RaycastHit2D[8];
+            for (int xs = 0; xs <= 1; xs++)
+            {
+                for (int ys = 0; ys <= 1; ys++)
+                {
+                    NavPoint cur = GetPoint(px + xs, py + ys);
+                    if (cur != null)
+                    {
+                        Vector2 delta = cur.pos - vec;
+                        float curDistance = delta.sqrMagnitude;
+                        if (curDistance > bestDistance)
+                            continue;
+                        
+                        int hits = Physics2D.RaycastNonAlloc(cur.pos, -delta, rayResults, delta.magnitude, PathMask);
+                        if (hits > 0)
+                            continue;
+                        
+                        result = cur;
+                        bestDistance = curDistance;
+                    }
+                }
+            }
+
+            // if this fails, we're screwed anyway, just get the nearest one. i'm not tracing allat
+            return result ?? GetNearestPoint(vec);
+        }
+
+        public static bool CheckHits(int inHits, RaycastHit2D[] rayResults)
+        {
+            for (int i = 0; i < inHits; i++)
+            {
+                var collision = rayResults[i];
+                ProtoshapeEdit pe = collision.collider.GetComponent<ProtoshapeEdit>();
+                if (pe)
+                {
+                    var shapeType = pe.mapData.type;
+                    if (shapeType == ProtoshapeEdit.ColliderType.Solid ||
+                        shapeType == ProtoshapeEdit.ColliderType.PlayersCollide ||
+                        shapeType == ProtoshapeEdit.ColliderType.Deadly)
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+        public static void InitializeGlobal() {
+            Map map = Map.Get;
+            Bounds bounds = map.bounds;
+            float mapW = bounds.size.x;
+            float mapH = bounds.size.y;
+            PathMask = LayerMask.GetMask(new string[]{"Gostek","Ground"});
+            PointsX = (int)(mapW / PointTargetScale);
+            PointsY = (int)(mapH / PointTargetScale);
+            
+            var colliderResults = new Collider2D[32];
+            var rayResults = new RaycastHit2D[32];
+            
+            Grid = new NavPoint[PointsX, PointsY];
+            // Create NavPoints
+            for (int x = 0; x < PointsX; x++) {
+                for (int y = 0; y < PointsY; y++)
+                {
+                    Vector2 targetPoint = PointsCoordPos(x, y);
+                    int hits = Physics2D.OverlapPointNonAlloc(targetPoint, colliderResults, PathMask);
+                    if (hits == 0)
+                    {
+                        Grid[x, y] = new NavPoint(x, y, targetPoint);
+                    }
+                    // Maybe TODO: if we're near the edge of a wall, try to nudge the point out of it if possible
+                }
+            }
+            
+            // Create NavPoint neighbor links
+            for (int x = 0; x < PointsX; x++) {
+                for (int y = 0; y < PointsY; y++)
+                {
+                    NavPoint point = Grid[x, y];
+                    if (point == null)
+                        continue;
+                    // Manually unrolled neighbor traces
+                    { // Right
+                        NavPoint neigbor = GetPoint(x + 1, y);
+                        if (neigbor != null)
+                        {
+                            Vector2 delta = neigbor.pos - point.pos;
+                            int hits = Physics2D.RaycastNonAlloc(point.pos, delta.normalized, rayResults, delta.magnitude);
+                            if (CheckHits(hits, rayResults))
+                            {
+                                point.dirs |= Dirs.Right;
+                                neigbor.dirs |= Dirs.Left;
+                            }
+                        }
+                    }
+                    { // UpRight
+                        NavPoint neigbor = GetPoint(x + 1, y + 1);
+                        if (neigbor != null)
+                        {
+                            Vector2 delta = neigbor.pos - point.pos;
+                            int hits = Physics2D.RaycastNonAlloc(point.pos, delta.normalized, rayResults, delta.magnitude);
+                            if (CheckHits(hits, rayResults))
+                            {
+                                point.dirs |= Dirs.UpRight;
+                                neigbor.dirs |= Dirs.DownLeft;
+                            }
+                        }
+                    }
+                    { // Up
+                        NavPoint neigbor = GetPoint(x, y + 1);
+                        if (neigbor != null)
+                        {
+                            Vector2 delta = neigbor.pos - point.pos;
+                            int hits = Physics2D.RaycastNonAlloc(point.pos, delta.normalized, rayResults, delta.magnitude);
+                            if (CheckHits(hits, rayResults))
+                            {
+                                point.dirs |= Dirs.Up;
+                                neigbor.dirs |= Dirs.Down;
+                            }
+                        }
+                    }
+                    { // UpLeft
+                        NavPoint neigbor = GetPoint(x - 1, y + 1);
+                        if (neigbor != null)
+                        {
+                            Vector2 delta = neigbor.pos - point.pos;
+                            int hits = Physics2D.RaycastNonAlloc(point.pos, delta.normalized, rayResults, delta.magnitude);
+                            if (CheckHits(hits, rayResults))
+                            {
+                                point.dirs |= Dirs.UpLeft;
+                                neigbor.dirs |= Dirs.DownRight;
+                            }
+                        }
+                    }
+                }
+            }
+
+            AllPoints = new List<NavPoint>();
+            // Remove points with 0 neighbors
+            for (int x = 0; x < PointsX; x++)
+            {
+                for (int y = 0; y < PointsY; y++)
+                {
+                    NavPoint point = Grid[x, y];
+                    if (point != null)
+                    {
+	                    if (point.dirs == Dirs.Zero)
+	                    {
+		                    Grid[x, y] = null;
+	                    }
+	                    else
+	                    {
+		                    point.neighbors = GetNeigborsDist(point);
+		                    AllPoints.Add(point);
+	                    }
+                    }
+                }
+            }
+
+            Ready = true;
+        }
+
+        public static void ResetGlobal()
+        { 
+            Ready = false;
+            PointsX = -1;
+            PointsY = -1; 
+            //PointTargetScale = 10f;
+            Grid = null;
+            AllPoints = null;
+        }
+
+        public static NavPoint GetRandomPoint()
+        {
+	        var rand = new Random();
+	        return AllPoints[rand.Next(AllPoints.Count)];
+        }
+
+        public static List<NavPoint> AStar(NavPoint start, NavPoint goal)
+        {
+            var cameFrom = new Dictionary<NavPoint, NavPoint>();
+            var gScore = new Dictionary<NavPoint, float> { [start] = 0 };
+            var fScore = new Dictionary<NavPoint, float> { [start] = Heuristic(start, goal) };
+            PriorityQueue<NavPoint> openSet = new PriorityQueue<NavPoint>();
+            openSet.Enqueue(start, fScore[start]);
+            
+            //Debug.Log("Path start");
+            while (openSet.Count > 0)
+            {
+                var current = openSet.Dequeue();
+                if (current == goal)
+                {
+                    return ReconstructPath(cameFrom, current);
+                }
+                foreach (var (neighbor, dist) in current.neighbors)
+                {
+                    var tentativeGScore = gScore[current] + dist;
+                    if (!gScore.ContainsKey(neighbor) || tentativeGScore < gScore[neighbor])
+                    {
+                        cameFrom[neighbor] = current;
+                        gScore[neighbor] = tentativeGScore;
+                        fScore[neighbor] = gScore[neighbor] + Heuristic(neighbor, goal);
+                        if (!openSet.Contains(neighbor))
+                        {
+                            openSet.Enqueue(neighbor, fScore[neighbor]);
+                        }
+                    }
+                }
+            }
+
+            return null; // No path found
+        }
+
+        private static List<NavPoint> ReconstructPath(Dictionary<NavPoint, NavPoint> cameFrom, NavPoint current)
+        {
+            var totalPath = new List<NavPoint> { current };
+            while (cameFrom.ContainsKey(current))
+            {
+                current = cameFrom[current];
+                totalPath.Insert(0, current);
+            }
+            return totalPath;
+        }
+    }
 	
 	class SnailBot {
 		const int IDX_RIGHT = 0;
@@ -383,17 +596,169 @@ public class SnailBots: MonoBehaviour
 		
 		public Player plrToControl = null;
 		private Player plrToKill = null;
+		private Player lastPlrToKill = null;
 		
-		private Flag ourFlag = null;
-		private Flag theirFlag = null;
+		public Flag ourFlag = null;
+		public Flag theirFlag = null;
 		
 		const int SMODE_DEATHMATCH = 0;
 		const int SMODE_GET_THEIR_FLAG = 1;
 		
 		private int currentMode = -1;
 		
+		private class PriorityQueue<T> {
+			private List<KeyValuePair<T, float>> elements = new List<KeyValuePair<T, float>>();
+
+			public int Count {
+				get { return elements.Count; }
+			}
+
+			public void Enqueue(T item, float priority) {
+				elements.Add(new KeyValuePair<T, float>(item, priority));
+			}
+
+			public T Dequeue() {
+				int bestIndex = 0;
+
+				for (int i = 0; i < elements.Count; i++) {
+					if (elements[i].Value < elements[bestIndex].Value) {
+						bestIndex = i;
+					}
+				}
+
+				T bestItem = elements[bestIndex].Key;
+				elements.RemoveAt(bestIndex);
+				return bestItem;
+			}
+
+			public bool Contains(T item) {
+				return elements.Exists(x => x.Key.Equals(item));
+			}
+		}
+		
+		public Vector3 navFinalTarget = Vector3.zero;
+		public NavX.NavPoint navTargetWaypoint = null;
+		public NavX.NavPoint navCurrentWaypoint = null;
+		public NavX.NavPoint navNextWaypoint = null;
+		public List<NavX.NavPoint> navCurrentPath = null;
+		
+		public List<Waypoint> AStarPath(Waypoint start, Waypoint target) {
+			List<Waypoint> path = new List<Waypoint>();
+			PriorityQueue<Waypoint> openSet = new PriorityQueue<Waypoint>();
+			Dictionary<Waypoint, Waypoint> cameFrom = new Dictionary<Waypoint, Waypoint>();
+			Dictionary<Waypoint, float> gScore = new Dictionary<Waypoint, float>();
+			Dictionary<Waypoint, float> fScore = new Dictionary<Waypoint, float>();
+
+			gScore[start] = 0;
+			fScore[start] = HeuristicCostEstimate(start, target);
+			openSet.Enqueue(start, fScore[start]);
+
+			while (openSet.Count > 0) {
+				Waypoint current = openSet.Dequeue();
+				if (current == target) {
+					path = ReconstructPath(cameFrom, current);
+					break;
+				}
+				foreach (Waypoint.Connection neighborConn in current.connections) {
+					Waypoint neighbor = neighborConn.waypoint;
+					float tentativeGScore = gScore[current] + DistanceBetween(current, neighbor);
+					if (!gScore.ContainsKey(neighbor) || tentativeGScore < gScore[neighbor]) {
+						cameFrom[neighbor] = current;
+						gScore[neighbor] = tentativeGScore;
+						fScore[neighbor] = gScore[neighbor] + HeuristicCostEstimate(neighbor, target);
+						if (!openSet.Contains(neighbor)) {
+							openSet.Enqueue(neighbor, fScore[neighbor]);
+						}
+					}
+				}
+			}
+			return path;
+		}
+
+		private float HeuristicCostEstimate(Waypoint a, Waypoint b) {
+			return Vector3.Distance(a.transform.position, b.transform.position);
+		}
+
+		private float DistanceBetween(Waypoint a, Waypoint b) {
+			return Vector3.Distance(a.transform.position, b.transform.position);
+		}
+
+		private List<Waypoint> ReconstructPath(Dictionary<Waypoint, Waypoint> cameFrom, Waypoint current) {
+			List<Waypoint> totalPath = new List<Waypoint> { current };
+			while (cameFrom.ContainsKey(current)) {
+				current = cameFrom[current];
+				totalPath.Insert(0, current);
+			}
+			return totalPath;
+		}
+		
+		public void SetNavTarget(Vector2 pos, Vector2 newTarget) {
+			if (newTarget.Equals(navFinalTarget))
+				return;
+			navFinalTarget = newTarget;
+			NavX.NavPoint newTargetWaypoint = NavX.GetNearestVisiblePoint(newTarget);
+			if (newTargetWaypoint == navTargetWaypoint)
+				return;
+			navTargetWaypoint = newTargetWaypoint;
+			navCurrentWaypoint = NavX.GetNearestVisiblePoint(pos);
+			navCurrentPath = NavX.AStar(navCurrentWaypoint, navTargetWaypoint);
+			if (navCurrentPath != null && navCurrentPath.Count > 1) {
+				navCurrentPath.RemoveAt(0); // start waypoint
+				navNextWaypoint = navCurrentPath[0];
+				navCurrentPath.RemoveAt(0); // next waypoint
+			} else {
+				navNextWaypoint = null;
+			}
+		}
+		
+		public void ResetNav() {
+			//navFinalTarget = Vector3.zero;
+			navTargetWaypoint = null;
+			navCurrentWaypoint = null;
+			navNextWaypoint = null;
+			navCurrentPath = null;
+			navFinalTarget = NULLVEC;
+		}
+		
+		public Vector3 GetWalkTarget(Vector2 pos) {
+			if (navNextWaypoint == null || navCurrentPath == null || navCurrentPath.Count == 0) // go go go!
+				return navFinalTarget;
+			Vector2 playerPos = pos;
+			Vector2 currentWpPos = navCurrentWaypoint.pos;
+			Vector2 nextWpPos = navNextWaypoint.pos;
+			float currentWpDistSqr = ((Vector2)(currentWpPos - playerPos)).sqrMagnitude;
+			float nextWpDistSqr = ((Vector2)(nextWpPos - playerPos)).sqrMagnitude;
+			if (currentWpDistSqr > nextWpDistSqr) {
+				navCurrentWaypoint = navNextWaypoint;
+				navNextWaypoint = navCurrentPath[0];
+				navCurrentPath.RemoveAt(0);
+				return GetWalkTarget(pos);
+			}
+			
+			// Funnel
+			var currentTarget = nextWpPos;
+			var rayResults = new RaycastHit2D[8];
+			for (int i = 0; i < Math.Min(navCurrentPath.Count, 16); i++)
+			{
+				NavX.NavPoint targ = navCurrentPath[i];
+				if (targ == null)
+					return currentTarget;
+
+				var delta = targ.pos - playerPos;
+				int hits = Physics2D.RaycastNonAlloc(playerPos, delta.normalized, rayResults, delta.magnitude);
+				if (NavX.CheckHits(hits, rayResults))
+				{
+					currentTarget = targ.pos;
+				}
+			}
+
+			return currentTarget;
+		}
+		
+		public int resetNavTimer = 0;
+		
 		private bool isDeathmatch = false;
-		private Waypoint wpDeathmatch = null;
+		private NavX.NavPoint wpDeathmatch = null;
 		private Stopwatch wpDmWatch = new Stopwatch();
 		
 		private static int snailBotIdx = 0;
@@ -401,77 +766,6 @@ public class SnailBots: MonoBehaviour
 		public static void Reset() {
 			snailBotIdx = 0;
 		}
-		
-		private static string[] snailBotNames = new string[]{
-			"Not Fri",
-			"Smurf",
-			"Lil' Haste Jr.",
-			"QelintiD",
-			"Porculeitor",
-			"GHOSTEK"
-		};
-		
-		public static string[] botLines = new string[]{
-			"chicky chicky", "Good public today", "u're good :(", "I hate pineapple pizza", "rage quit?",
-			":p", ":)", "xD", ":D", "wtf?", "omg!", "lel", "i love this game", "call an ambulance lol!",
-			"i hate this game", "join our discord!", "i'll get u next time buddy", "are you on discord?",
-			"how many fake accounts does nino have?", "less talking, more killing", "kek.. nice shot",
-			"this is so freaking op", "i feel useless", "this is nice", "this is fun", "so bad... just so bad",
-			"NICE!", "what are you doing?", "this is so much better than s1", "kek", "when is MM back?",
-			"hahha", "oh no :(", "NOOOO!", "fck this", "o_O", "aaaaaaah!", "????", "come at me bro!",
-			"i am so bad" , "i am sooo good", "best game ever", "worst game ever", "runmode is for losers!",
-			"am I warping?", "wazzup?", "lmfao", "eat that!", "bro?", "hmm?", "THD has to work on S2!",
-			"need a new mouse", "need a new pc", "people still play s1?", "yesterday I went into a bar and talked to this chick...",
-			"why are ppl still playing s1?", "what is this?", "what was that?", "why did dbfs leave the game?",
-			"never seen such a good move", "never seen such a bad move", "...", "where's andy21? or is it andy69 lol?",
-			"close one!", "is kinda cool game", "you should play ranked", "come ranked", "flak this shiiiiat",
-			"+3", "+2", "+5", "u mad now?", "u mad?", "i'm starting to get tilted", "soldat3d when?",
-			"-.-", "aayyy!", "let's go", "let's do this!", "come on!", "i just drank an energy drink", "don't talk like that",
-			"i just ate a pizza", "i ordered a pizza", "let's hope my kid doesn't wake up", "y'all are big nobos",
-			"good guy MM", "where is MM?", "s2 should be f2p", "s2 should have ingame shop", "I'm just smurfing...",
-			"good devs", "what are the devs doing?", "it's hot", "i am a little bit tired", "ez", "too ez", "way too ez",
-			"crap :(", "damn", "damn it!", "DAAAAAAAAMN", "no way in hell", "how?", "next! need new victims!",
-			"omg how??!?!", "this weapon is so bad", "this weapon is so good", "op shit", "no competition here today :(",
-			"nobody playing rankeds?", "you like my gostek?", "nice gostek!", "blubb", "my tema is sooo bad",
-			"this needs to be fixed", "this needs to be changed", "argh!", "this guy is fast", "can you defend for once?",
-			"this guy is slow", "grrrr", "nope", "just... nope", "what the fck?", "what the hell?", "go get the flag!",
-			"kewl :)", "tststs", "never!", "always!", "sometimes!", "good for you", "u happy now?", "return the flag!",
-			"10km chainsaw", "300ms ping", "laggers...", "kek... ghosteks", "well well!", "what the hell are you doing!",
-			"what have we here?", "nice balance *kek*", "lovely.", "u did what?", "reported", "only champs can talk to me like that!",
-			"probably have to go in 15min", "fix ranked when?", "new WM when?", "are you nino?", "shut up",
-			"Soldat3 when?", "remind me to remind guerri about this", "nice try", "why?", "soldat is life",
-			"my aim is gone", "can't aim shit right now", "oh boy", "oh no", "muahaha", "more s2 players when?",
-			";)", "gotcha!", "got you!", "now u ded :)", "i eat noobs for breakfast", "guerri forgot his reminders today?",
-			"road to bronze", "road to gold", "road to champ", "i'll be champ soon", "want to get gold III", "you're too slow dude..",
-			"come back here!", "where do you think you're going?", "just... don't!", "ay caramba", "do you even know how to cannonball?",
-			"one shots suck", "stop using op weapons", "nerf barret", "nerf mp5", "nerf m79", "nerf rheinmetall", "I saw horse on hippodrome yesterday",
-			"nerf deagles", "nerf rl", "nerf steyr", "nerf kalashnikov", "buff minigun", "minigun kills matter", "so I tried LSD last week",
-			"no more overheat", "unban delintiq when?", "good to know...", "just stop", "git gud kid", "git rekt kid", "I need to shower after this",
-			"i'll rek you harder than last time", "this map is nice", "this map is good", "this map is so bad", "your movement is so bad...",
-			"this map sucks", "i like this map", "i hate this map", "next map pliis", "who made this map?", "nice shot!",
-			"whoever made this map is dumb", "whoever made this map is a genius", "hm?", "what u want from me?", "well done!",
-			"this guy is too fast", "ranked is for noobs", "publics is for noobs", "recoil when?", "smoke nades when?", "that's what she said!",
-			"new nades when?", "invisible nades again?", "nice lag", "cheater!", "hacker!", "nice hacks", "nice cheats", "urmom k?",
-			"i'm actually fortnite pro!", "i'm actually valorant god", "i'm actually a pro CS:GO player", "i used to play soldat 1", "flak op?",
-			"i used to play this game 15y ago", "i'm glad i bought this game", "WHAAAWAHWAHAWAHAHA", "uhuacuhrc..", "asdfghjlhlelheo", "nino op?",
-			"*sigh*", "not again :(", "not this again", "shi..........T", "chatgpt when?", "new hats when?", "let's go other server?", "dD sux at running",
-			"where are all the other players?", "i feel good today", "i feel sad today", "cardboard poop", "silver trash", "why did dbfs leave?",
-			"you will all die!", "how dare you?", "xq's pepe memes are so stupid", "I like xq's pepe memes", "Where's horse?", "xq does too much memes... not enough soldat",
-			"tbroo", "tbrooo!", "twawaw", "twaaaa", "tENGU!", "anybody got some movie recommendations?", "time for a break?", "MM.. kek",
-			"you guys should take a break", "we will win this!", "we will lose :(", "you think you're better than me?", "proto new map when?",
-			"is anna a girl?", "dang son", "damn son", "daaaaaang", "tdaang", "can you kill one guy?", "why? WHYYYYYY?", "NOOOOO!", "flak this", "flak that",
-			"I hate paying taxes", "I'm 33... I feel so old now", "Did you know matrix came out in 1999?", "Any star wars fans here?", "oh yeh? oh YEH?",
-			"dude....", "this is low quality...", "this is some high quality gameplay!", "You should stream?", "Anybody streaming?", "hey... what the fick?",
-			"Ich mach dich fertig Junge!", "take that!", "people in the discord are weird", "people in the discord are kinda cool", "I don't like this Guerri",
-			"I don't like this fri", "I don't like this Haste", "I don't like this Bee", "I don't like this proto", "I don't like this evh0", "boo! boo! boo!",
-			"With your aim we're gonna lose", "With your movement we're gonna lose", "no wonder you're only bronze", "go back to bronze!", "xq is worst player ever",
-			"lel... kek... gg", "gg wp", "gl hf", "need better tema", "my tema is so bad I wanna kill myself", "Tengu is a crybaby!",
-			"if this game had one bug more it could win a nobel prize", "I'm a freaking genius", "I own many houses!", "did you know in spain you can occupy houses?",
-			"I like making MM pepe art!", "Runmode is for true soldat playurs!", "Climbmode is where the action is!", "Why am I playing with you losers?",
-			"Good job!", "Good job tema!", "I like my team. Good guys!", "xD", "no more overheat!", "flak kills matter!", "bruh?", "bruv?", "did you know nino is swede?",
-			"did you know haste is a horse?", "did you know haste is a belgian horse?", "xQ probably busy designing houses.. he's an architect!", "giga kek",
-			"your aim is nice", "your aim is bad", "my aim is so good I can snipe the wings off a fly!"
-		};
 		
 		private static void GiveCoolAppearance(Player player) {
 			player.props["skin color"] = new Color(1f,1f,1f).ToHex();
@@ -497,9 +791,8 @@ public class SnailBots: MonoBehaviour
 		public SnailBot(Player player, Flag ourFlag, Flag theirFlag) {
 			
 			this.plrToControl = player;
-
-			//player.nick = snailBotNames[snailBotIdx % snailBotNames.Length];
-			player.ping = 13;
+			
+			player.ping = -1;
 			//snailBotIdx++;
 			
 			this.ourFlag = ourFlag;
@@ -635,16 +928,19 @@ public class SnailBots: MonoBehaviour
 		private Vector2 altPos = new Vector2(0,0);
 		private Vector2 lastPosition = new Vector2(0,0);
 		
-		private Queue<Waypoint> currentPath = null;
-		private Waypoint currentWaypoint = null;
+		private List<NavX.NavPoint> currentPath = null;
+		private NavX.NavPoint currentWaypointX = null;
 		private bool waitForJets = false;
 		private Vector2 NULLVEC = new Vector2(0,0);
 		
+		//public StandardNavigate pather = null;
+		//public StandardBrain brain = null;
+		
 		public static int lineReached = -1;
-	
 		private void TakeControl() {
 			
 			Controls c = plrToControl.controlled;
+			StandardObject mystdobj = c.GetComponent<StandardObject>();
 			
 			if(c == null)
 				return;
@@ -667,53 +963,121 @@ public class SnailBots: MonoBehaviour
 			float hAxis = 0.0f;
 			bool amIFlagger = false;
 			Vector2 cpos = (Vector2)c.transform.position;
+			if (!gm.v.superman)
+			{
+				cpos.y -= gm.capsule.size.y / 2f;
+			}
+			Vector3 navTargetPosition = NULLVEC;
 			Vector2 gotoPosition = NULLVEC;
 			
+			if (resetNavTimer == 0) {
+				ResetNav();
+				resetNavTimer = rand.Next(50, 100);
+			} else {
+				resetNavTimer--;
+			}
+			
 			if(!isDeathmatch) {
-				if(theirFlag == null || ourFlag == null) {
+				/*if(theirFlag == null || ourFlag == null) {
 					FindFlags();
 					return; // find flags first then
+				}*/
+				// i don't trust that
+				foreach(Flag flag in Flag._flags) {
+					if(flag.team.Number == plrToControl.GetTeam())
+						ourFlag = flag;
+					else
+						theirFlag = flag;
 				}
+
+				if (!ourFlag || !theirFlag)
+					return;
 				
-				gotoPosition = (Vector2)theirFlag.transform.position;
+				lineReached = 9001;
 				
-				if(theirFlag.grabbed) {
-					Player holder = theirFlag.lastTouchedPlayer;
+				navTargetPosition = theirFlag.transform.position;
+				
+				if(theirFlag.carried) {
+					Player holder = GetFlagHolderPlayer(theirFlag);
 					if(holder == plrToControl) {
-						// Then go to our base?
-						if((cpos - (Vector2)theirFlag.transform.position).magnitude < 10) {
-							gotoPosition = (Vector2)ourFlag.basePoint;
-							amIFlagger = true;
-						}
+						amIFlagger = true;
 					}
 				}
-				
-				if(ourFlag.grabbed || !ourFlag.inbase) {
-					if(!amIFlagger)
-						gotoPosition = (Vector2)ourFlag.transform.position; // always chase EFC :D except when we are flagger
+				lineReached = 9002;
+
+				if (amIFlagger)
+				{
+					navTargetPosition = ourFlag.basePoint;
 				}
+				else
+				{
+					if (ourFlag.inbase)
+					{
+						navTargetPosition = theirFlag.transform.position;
+					}
+					else
+					{
+						Vector2 ourDelta = (Vector2)ourFlag.transform.position - cpos;
+						Vector2 theirDelta = (Vector2)theirFlag.transform.position - cpos;
+						if (theirFlag.carried || theirDelta.magnitude > ourDelta.magnitude)
+							navTargetPosition = ourFlag.transform.position;
+						else
+							navTargetPosition = theirFlag.transform.position;
+					}
+				}
+				lineReached = 9003;
 				
-				gotoPosition.y += 1;
+				navTargetPosition.y += 1f;
 			} else {
 				if(wpDeathmatch != null)
-					gotoPosition = wpDeathmatch.point;
+					navTargetPosition = wpDeathmatch.pos;
 			}
+			lineReached = 9004;
+			
+			gotoPosition = navTargetPosition;
+			Vector3 gotoDelta = gotoPosition - cpos;
+			float gotoDistSqr = gotoDelta.sqrMagnitude;
+			bool canSeePathTarget = RayCastHit(cpos, gotoPosition);
+			lineReached = 9005;
+			
+			// do smarter pathing if we can't see or aren't close to the target
+			//if (!canSeePathTarget || gotoDistSqr > (50*50)) {
+			if (true) {
+				lineReached = 9006;
+				if (!navTargetPosition.Equals(NULLVEC)) {
+					lineReached = 9007;
+					SetNavTarget(cpos, navTargetPosition);
+					lineReached = 9008;
+					
+					if (true) {//if (navCurrentConnection != null) {
+						gotoPosition = GetWalkTarget(cpos);
+						lineReached = 9009;
+						gotoDelta = gotoPosition - cpos;
+						gotoDistSqr = gotoDelta.sqrMagnitude;
+						canSeePathTarget = RayCastHit(cpos, gotoPosition);
+						lineReached = 9010;
+					}
+				}
+			}
+			lineReached = 9011;
 			
 			lineReached = 3;
 			
 			
 			bool canSeeKillTarget = false;
 			
+			/*
 			if(gotoPosition.x < cpos.x) {
 				hAxis = -1.0f;
 			} else {
 				hAxis = 1.0f;
 			}
+			*/
 			
 			lineReached = 101;
 			
 			
-			if(RayCastHit(cpos, gotoPosition)) {
+			/*if(canSeePathTarget) {
 				// Ok so we can't see our goto position?
 				// but can we see some waypoint or whatever?
 				
@@ -736,32 +1100,28 @@ public class SnailBots: MonoBehaviour
 				} else {
 					stuckTimer = 0;
 					lineReached = 500;
-					Waypoint wp = Waypoint.FindVisibleWaypoint(cpos, gotoPosition, hAxis);
+					//WaypointX wp = WaypointX.FindVisibleWaypointX(cpos, gotoPosition, hAxis);
 					if(wp != null)
 						gotoPosition = wp.point;
 					lineReached = 100;
 				}
-			}
+			}*/
 			
 			lineReached = 4;
 
 			
-			if(plrToKill != null) {
-				if(plrToKill.controlled != null) {
+			if(plrToKill) {
+				if(plrToKill.controlled) {
 					Controls k = plrToKill.controlled;
 					
 					GostekMovement gm2 = k.GetComponent<GostekMovement>();
-					
-
 					Vector2 overAim = new Vector2(1, 2).normalized;
-					
 					
 					Vector2 kpos = (Vector2)k.transform.position;
 
 					
 					if (kpos.x < cpos.x) {
 						overAim.x *= -1;
-					} else {
 					}
 					
 					Vector2 toKillTarget = kpos - cpos;
@@ -782,11 +1142,11 @@ public class SnailBots: MonoBehaviour
 					float overAimFactor = toKillTarget.magnitude / 12.0f;
 					
 					killTargetDistance = RayCastDistance(cpos, toKillTarget, 500f);
-					if(killTargetDistance > 100)
+					if(killTargetDistance > 60)
 						killTargetDistance = -1;
 					
 					if(amIFlagger)
-						if(killTargetDistance > 15)
+						if(killTargetDistance > 40)
 							killTargetDistance = -1; // only shoot close enemies if we are flagger
 					
 					lineReached = 6;
@@ -794,11 +1154,15 @@ public class SnailBots: MonoBehaviour
 					if(killTargetDistance > toKillTarget.magnitude) {
 						canSeeKillTarget = true;
 						ControlsExtensions.SetAimWorld(c, kpos + overAim * overAimFactor);
-						if(true) {
+						// stop the bots from shooting while they're inside invincibility
+						if(plrToControl.GetTimeSinceRespawn() > (handicapsInvincibleAfterSpawnDuration + ((mystdobj.Health > handicapsSpawnHealth) ? 1.5f : 0f))) {
 							GostekWeapon gw = c.GetComponent<GostekWeapon>();
-							if(gw && gw.weapon)
-								if(gw.weapon.IsReady())
+							if(gw && gw.weapon) {
+								if(gw.weapon.IsReady()) {
 									c.SetKey(Key.Fire1, pressed: true);
+									//c.gameObject.AddTag("StopHandicap"); // does not actually work on the server :) nice
+								}
+							}
 							didFire = true;
 						}
 						else 
@@ -828,8 +1192,17 @@ public class SnailBots: MonoBehaviour
 				hAxis = 1.0f;
 			}
 			
-			if(!canSeeKillTarget)
-				c.SetAimWorld(cpos + new Vector2(hAxis, 0));
+			if(!canSeeKillTarget) {
+				if (gotoPosition.Equals(NULLVEC) || gm.v.superman) {
+					c.SetAimWorld(cpos + new Vector2(hAxis, 0));
+				} else {
+					Vector2 delta = gotoPosition - cpos;
+					if (delta.magnitude > 100) {
+						delta = delta.normalized * 100;
+					}
+					c.SetAimWorld(cpos + delta);
+				}
+			}
 			
 			lineReached = 9;
 			
@@ -956,15 +1329,32 @@ public class SnailBots: MonoBehaviour
 			
 			lineReached = -1;
 			
-			plrToKill = null;
-			
 			Controls targetControls = plrToControl.controlled;
 			GostekMovement gm = targetControls.GetComponent<GostekMovement>();
+			lineReached = -200;
 			Vector2 origin = (Vector2)targetControls.transform.position;
+			Vector2 currentTargetPos = Vector2.zero;
+			float currentTargetDist = float.PositiveInfinity;
+			
+			lineReached = -201;
+			
+			lastPlrToKill = plrToKill;
+			if (lastPlrToKill is null || lastPlrToKill.IsDead()) {
+				plrToKill = null;
+			} else {
+				lineReached = -202;
+				plrToKill = lastPlrToKill;
+				currentTargetPos = (Vector2)plrToKill.controlled.transform.position;
+				currentTargetDist = Vector2.Distance(origin, currentTargetPos);
+				lineReached = -203;
+			}
 			
 			lineReached = -177;
 			
 			foreach(Player player in Players.Get.GetAlive()) {
+				if (player == plrToControl)
+					continue;
+				
 				if(!player)
 					continue;
 				
@@ -974,25 +1364,47 @@ public class SnailBots: MonoBehaviour
 				if(player.GetTeam() == plrToControl.GetTeam())
 					if(!isDeathmatch)
 						continue;
-					
+				
+				// does the player have spawnprotection?
+				StandardObject stdobj = player.controlled.GetComponent<StandardObject>();
+				if (player.GetTimeSinceRespawn() < (handicapsInvincibleAfterSpawnDuration + ((stdobj.Health > handicapsSpawnHealth) ? 1.5f : 0f))) {
+					if (!player.controlled.gameObject.HasTag("StopHandicap")) {
+						continue;
+					}
+				}
+				
 				lineReached = -109;
 				
+				// Is the player close enough for us to care?
+				Vector2 targetPos = (Vector2)player.controlled.transform.position;
+				float targetDist = Vector2.Distance(origin, targetPos);
+				if (plrToKill == lastPlrToKill) {
+					if (targetDist > currentTargetDist * 0.75f) // target sticking
+						continue;
+				} else {
+					if (targetDist > currentTargetDist) // pick closest
+						continue;
+				}
+				
 				// But can we see this player?
-				if(RayCastHit(origin, (Vector2)player.controlled.transform.position))
+				if(RayCastHit(origin, targetPos))
 					continue;
 				
 				plrToKill = player;
-				if(rand.NextDouble() < 0.75)
-					continue;
-				break;
+				currentTargetPos = targetPos;
+				currentTargetDist = targetDist;
 			}
+			
+			//if (!(plrToKill is null) && plrToKill != lastPlrToKill) {
+			//	GameChat.instance.ServerChat("<color=#FEFEFE>[" + plrToControl.nick + "] My new target is " + plrToKill.nick + "!</color>");
+			//}
 			
 			lineReached = -403;
 			
 			if(isDeathmatch) {
 				if(wpDeathmatch == null) {
 					lineReached = -408;
-					wpDeathmatch = Waypoint.GetRandom();
+					wpDeathmatch = NavX.GetRandomPoint();
 					lineReached = -409;
 					wpDmWatch.Reset();
 					wpDmWatch.Start();
@@ -1003,10 +1415,12 @@ public class SnailBots: MonoBehaviour
 						wpDmWatch.Stop();
 						wpDmWatch.Reset();
 						wpDmWatch.Start();
-						wpDeathmatch = Waypoint.GetRandom();
+						wpDeathmatch = NavX.GetRandomPoint();
 					}
 					lineReached = -444;
 				}
+			} else {
+				wpDeathmatch = null;
 			}
 			
 			lineReached = -999;
@@ -1086,49 +1500,49 @@ public class SnailBots: MonoBehaviour
 			values[IDX_GOSTEK_SLOPE_LEFT] = values[IDX_DOWN_LEFT2] - values[IDX_DOWN_LEFT];
 			values[IDX_GOSTEK_SLOPE_RIGHT] = values[IDX_DOWN_RIGHT2] - values[IDX_DOWN_RIGHT];
 
-			Vector2 aimWorld = ControlsExtensions.GetAimWorld(targetControls) - origin;
+			Vector2 aimWorld = targetControls.GetAimWorld() - origin;
 			outputs[IDX_OUT_AIMX] = (float)Math.Round((double)(aimWorld.x / 50f), 4);
 			outputs[IDX_OUT_AIMY] = (float)Math.Round((double)(aimWorld.y / 50f), 4);
 		}
 	}
-	
-	
-	
 
+	public static float handicapsInvincibleAfterSpawnDuration = 1.5f;
+	public static float handicapsSpawnHealth = 1.0f;
 	
-	
-
+	private void UpdateVariables() {
+		Handicaps handi = (Handicaps)UnityEngine.Object.FindObjectOfType(typeof(Handicaps));
+		if (handi) {
+			handicapsInvincibleAfterSpawnDuration = handi.invincibleAfterSpawnDuration;
+			handicapsSpawnHealth = handi.spawnHealth;
+		}
+	}
 	
 	private void Awake() {
 		if(!Net.IsServer) {
 			Eventor.RemoveListener(Events.Player_Joined, OnPlayerJoinedLocal);
 			Eventor.AddListener(Events.Player_Joined, OnPlayerJoinedLocal);
-			Waypoint.HideWaypoints();
-			
-			/*foreach(Player bot in Players.Get.GetBots()) {
-				if(bot.props.Exists("x-nick")) {
-					bot.nick = (string)bot.props["x-nick"];
-				}
-			}*/
 			
 			return;
 		}
-
-		/*for(int i = 0; i < Global.botNames.Length; i++) {
-			Global.botNames[i] = snailBotNames[i % snailBotNames.Length];
-		}*/
+		
+		for(int i = 0; i < Global.botNames.Length; i++) {
+			string curName = Global.botNames[i];
+			if (curName.StartsWith("BOT"))
+				continue;
+			else
+				Global.botNames[i] = "BOT " + curName;
+		}
 		
 		SnailBot.Reset();
 		
-		Time.fixedDeltaTime = 1.0f / 60.0f;
+		//Time.fixedDeltaTime = 1.0f / 60.0f;
 		
 		GameChat.instance.OnChat.RemoveListener(this.OnChat);
 		Eventor.RemoveListener(Events.Player_Joined, OnPlayerJoined);
         Eventor.RemoveListener(Events.Player_Left, OnPlayerLeft);
 		Eventor.RemoveListener(Events.Died, OnDied);
 		
-		
-		Waypoint.InitializePathFinding();
+		NavX.InitializeGlobal();
 		
 		Initialize();
 		
@@ -1153,6 +1567,7 @@ public class SnailBots: MonoBehaviour
         Eventor.RemoveListener(Events.Player_Left, OnPlayerLeft);
 		Eventor.RemoveListener(Events.Died, OnDied);
 		Eventor.RemoveListener(Events.Player_Joined, OnPlayerJoinedLocal);
+		NavX.ResetGlobal();
 	}
 	
 	private System.Random rand = new System.Random();
@@ -1168,11 +1583,6 @@ public class SnailBots: MonoBehaviour
 	private void OnDied(IGameEvent ev) {
 		if(snailBots.Count < 1)
 			return;
-
-		if (rand.NextDouble() < 0.03) {
-			// Pick a random bot I guess?
-			RandomBotChatter(SnailBot.botLines[rand.Next(SnailBot.botLines.Length)]);
-		}
 	}
 	
 	private void OnPlayerJoinedLocal(IGameEvent ev) {
@@ -1180,9 +1590,6 @@ public class SnailBots: MonoBehaviour
 		
 		if(!gpe.Player.IsBot())
 			return; // don't care about humans :)
-		
-		/*if(gpe.Player.props.Exists("x-nick"))
-			gpe.Player.nick = (string)gpe.Player.props["x-nick"];*/
 	}
 	
 	private void OnPlayerJoined(IGameEvent ev) {
@@ -1190,23 +1597,9 @@ public class SnailBots: MonoBehaviour
 		
 		if(!gpe.Player.IsBot()) {
 			return; // don't care about humans :)
-		} /*else {
-			foreach(Player p in Players.Get.GetHumans()) {
-				if(Net.IsServer) {
-					Players.Master_SyncAllPlayers(gpe.Player.id);
-				}
-			}
-		}*/
-
-		if(gpe.Player.nick.Contains("Honeybee")) {
-			RandomBotChatter("Omg... a bee!");
-		}
-		else if(gpe.Player.nick.Contains("Haste")) {
-			RandomBotChatter("Horse, is that you?");
 		}
 		
 		AddSnailBotForPlayer(gpe.Player);
-		//GameChat.ChatOrLog("BOTS NOW: " + snailBots.Count.ToString());
 	}
 	
 	private void OnPlayerLeft(IGameEvent ev) {
@@ -1226,25 +1619,154 @@ public class SnailBots: MonoBehaviour
 		}
 	}
 	
-	
-	/*
-	private void OnGUI() {
-		GUI.skin.label.fontSize = 22;
-		GUI.skin.label.normal.textColor = new Color(1f, 1f, 1f, 0.7f);
+	private void DrawDottedLine(Vector2 start, Vector2 end, int count = 20) {
+		Vector2 delta = end - start;
+		float len = delta.magnitude;
+		if (count > len / 10f)
+			count = (int)(len / 10f);
 		
-		for(int i = 0; i < values.Length; i++) {
-			GUI.Label(new Rect(400, 50+25*i, 300, 100), valueNames[i] + "   " + values[i].ToString());
+		float step = 1f / count;
+		
+		int maxX = Screen.width;
+		int maxY = Screen.height;
+		
+		for (float lerp = 0f; lerp < 1f; lerp += step) {
+			Vector2 lerpS = Vector2.Lerp(start, end, lerp);
+			if (lerpS.x > -10 && lerpS.y > -10 && lerpS.x < maxX && lerpS.y < maxY)
+				GUI.Label(new Rect(lerpS.x - 5, lerpS.y - 20, 100, 100), ".");
 		}
-		
-		for(int i = 0; i < outputs.Length; i++) {
-			GUI.Label(new Rect(200, 50+25*i, 300, 100), outputNames[i] + "    " + outputs[i].ToString());
-		}
-		
-		GUI.Label(new Rect(600, 50, 300, 100), killTargetDistance.ToString());
 	}
-	*/
 	
+	public static Vector2 W2S(Vector3 inVec) {
+		Vector2 outVec = GameCamera.Get.cam.WorldToScreenPoint(inVec);
+		outVec.y = Screen.height - outVec.y;
+		return outVec;
+	}
 	
+	public static Player GetFlagHolderPlayer(Flag flag)
+	{
+		ItemPickup holder = flag.lastholder;
+		if (holder)
+		{
+			return holder.GetComponent<Controls>().player;
+		}
+		return null;
+	}
+	
+	// Debug overlay
+	private void OnGUI() {
+		Player local = Players.Get.GetLocalPlayer();
+		if (local is null)
+			return;
+		
+		GUI.skin.label.fontSize = 22;
+		GUI.skin.label.normal.textColor = new Color(1f, 0f, 0f, 1f);
+		
+		GameCamera camera = GameCamera.Get;
+		
+		WaypointManager wpm = WaypointManager.instance;
+		
+		if (local.IsSpectator() && !(camera is null) && !(camera.Target is null)) {
+			GUI.skin.label.normal.textColor = new Color(1f, 0f, 0f, 1f);
+			Vector3 pointer = camera.Target.input.GetPointer(Pointer.AimWorld);
+			Vector3 player = camera.Target.transform.position;
+			//camera.MoveToPosition(player);
+			Vector3 pointerA = camera.Target.input.GetPointer(Pointer.Aim);
+			Vector2 pointerS = W2S(pointer);
+			Vector2 playerS = W2S(player);
+			Vector2 deltaStep = pointerS - playerS;
+			DrawDottedLine(playerS, pointerS, 20);
+			GUI.Label(new Rect(pointerS.x - 5, pointerS.y - 10, 100, 100), "X");
+			
+			SnailBot bot = FindSnailBotForPlayer(camera.Target.player);
+			if (bot != null) {
+				if (!bot.navFinalTarget.Equals(Vector3.zero)) {
+					GUI.skin.label.normal.textColor = new Color(1f, 1f, 0f, 1f);
+					Vector3 navFinalTargetDir = bot.navFinalTarget - player;
+					Vector2 navFinalTargetS = W2S(bot.navFinalTarget);
+					Vector2 navFinalTargetS2 = W2S(player + (navFinalTargetDir.normalized * 25));
+					DrawDottedLine(playerS, navFinalTargetS, 50);
+					//if (navFinalTargetDir.magnitude > 25)
+					//	GUI.Label(new Rect(navFinalTargetS2.x - 5, navFinalTargetS2.y - 10, 100, 100), "t");
+					//else
+					//	DrawDottedLine(playerS, navFinalTargetS, 50);
+					GUI.Label(new Rect(100, 40, 500, 500), "CurrentPoint: " + (bot.navCurrentWaypoint));
+					GUI.Label(new Rect(100, 70, 500, 500), "NextPoint: " + (bot.navNextWaypoint));
+					GUI.Label(new Rect(100, 100, 500, 500), "NavPath: " + (bot.navCurrentPath == null));
+					if (bot.navCurrentPath != null)
+						GUI.Label(new Rect(100, 130, 500, 500), "PathLen: " + bot.navCurrentPath.Count);
+
+					if (bot.ourFlag && bot.theirFlag)
+					{
+						GUI.Label(new Rect(300, 40, 500, 500), "Our flag dropped: " + bot.ourFlag.dropped + " inbase: " + bot.ourFlag.inbase + " safe: " + bot.ourFlag.safe);
+						GUI.Label(new Rect(300, 70, 500, 500), "Our flag carried: " + bot.ourFlag.carried + " grabbed: " + bot.ourFlag.grabbed);
+						GUI.Label(new Rect(300, 100, 500, 500), "Their flag dropped: " + bot.theirFlag.dropped + " inbase: " + bot.theirFlag.inbase + " safe: " + bot.theirFlag.safe);
+						GUI.Label(new Rect(300, 130, 500, 500), "Their flag carried: " + bot.theirFlag.carried + " grabbed: " + bot.theirFlag.grabbed);
+						var theirHolder = GetFlagHolderPlayer(bot.theirFlag);
+						if (theirHolder)
+							GUI.Label(new Rect(300, 160, 500, 500), "Their flag carrier: " +  theirHolder.nick);
+					}
+					
+					GUI.Label(new Rect(navFinalTargetS.x - 5, navFinalTargetS.y - 10, 100, 100), "T");
+					if (bot.navCurrentWaypoint != null) {
+						GUI.skin.label.normal.textColor = new Color(0f, 0f, 1f, 1f);
+						Vector2 navCurrentWaypointS = W2S(bot.navCurrentWaypoint.pos);
+						GUI.Label(new Rect(navCurrentWaypointS.x - 5, navCurrentWaypointS.y - 10, 100, 100), "C");
+						if (bot.navNextWaypoint != null) {
+							GUI.skin.label.normal.textColor = new Color(0f, 1f, 1f, 1f);
+							Vector3 navCurrentConnPos = bot.navNextWaypoint.pos;
+							Vector2 navCurrentConnectionS = W2S(navCurrentConnPos);
+							GUI.Label(new Rect(navCurrentConnectionS.x - 5, navCurrentConnectionS.y - 10, 100, 100), "N");
+							if (bot.navCurrentPath != null && bot.navCurrentPath.Count > 0) {
+								GUI.skin.label.normal.textColor = new Color(0f, 1f, 0f, 0.5f);
+								//Waypoint.Connection[] conns = bot.navCurrentPath.ToArray();
+								Vector2 prevConnPosS = navCurrentConnectionS;
+								foreach (NavX.NavPoint wpConn in bot.navCurrentPath) {
+									Vector2 nextConnPosS = W2S(wpConn.pos);
+									GUI.Label(new Rect(nextConnPosS.x - 5, nextConnPosS.y - 10, 100, 100), "w");
+									DrawDottedLine(prevConnPosS, nextConnPosS, 4);
+									prevConnPosS = nextConnPosS;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		// Map map = Map.Get;
+		// int i = 0;
+		// Collider2D[] results = new Collider2D[1];
+		// foreach (GameObject gameObject in map.combine) {
+			// ProtoshapeEdit[] componentsInChildren = gameObject.GetComponentsInChildren<ProtoshapeEdit>();
+			// for (int y = 0; y < componentsInChildren.Length; y++)
+			// {
+				// ProtoshapeEdit shape_edit = componentsInChildren[y];
+				// ProtoShape2D shape = shape_edit.ps2d;
+				// switch (shape_edit.mapData.type) {
+					// case ProtoshapeEdit.ColliderType.Solid:
+					// case ProtoshapeEdit.ColliderType.PlayersCollide:
+					// case ProtoshapeEdit.ColliderType.Platform:
+					// case ProtoshapeEdit.ColliderType.Climbable:
+						// foreach (PS2DColliderPoint point in shape.cpoints) {
+							// Vector2 wp = point.wPosition;
+							// wp += Vector2.up;//point.normal.normalized;
+							// Vector2 pt = camera.cam.WorldToScreenPoint(wp);
+							// int hits = Physics2D.OverlapPointNonAlloc(wp, results, WaypointX.raycastLayer);
+							// if (hits < 1)
+								// GUI.skin.label.normal.textColor = new Color(0f, 1f, 0f, 1f);
+							// else
+								// GUI.skin.label.normal.textColor = new Color(1f, 0f, 0f, 1f);
+							// GUI.Label(new Rect(pt.x - 5, Screen.height-pt.y - 20, 100, 100), "p");
+						// }
+						// break;
+					// default:
+						// break;
+				// }
+				// //GUI.Label(new Rect(600, 150 + i, 300, 100), componentsInChildren.Length.ToString());
+			// }
+		// }
+	}
 	
 	
 	
@@ -1275,7 +1797,16 @@ public class SnailBots: MonoBehaviour
 		snailBots.Add(new SnailBot(player, hisFlag, theirFlag));
 	}
 	
+	private SnailBot FindSnailBotForPlayer(Player player) {
+		foreach(SnailBot snailBot in snailBots) {
+			if (snailBot.plrToControl == player)
+				return snailBot;
+		}
+		return null;
+	}
+	
 	private void Initialize() {
+		UpdateVariables();
 		snailBots.Clear();
 		foreach(Player player in Players.Get.GetBots()) {
 			AddSnailBotForPlayer(player);
@@ -1284,6 +1815,7 @@ public class SnailBots: MonoBehaviour
 	}
 	
 	private void FixedUpdate() {
+		//TestCam();
 		
 		if(!Net.IsServer)
 			return;
@@ -1294,7 +1826,4 @@ public class SnailBots: MonoBehaviour
 		foreach(SnailBot snailBot in snailBots)
 			snailBot.FixedUpdate();
 	}
-	
-	
-	
 }
