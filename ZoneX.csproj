@@ -56,6 +56,9 @@
       <Reference Include="UnityEngine.IMGUIModule">
         <HintPath>..\soldat2-windows-test\soldat2-test_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
       </Reference>
+      <Reference Include="UnityEngine.ParticleSystemModule">
+        <HintPath>..\soldat2-windows-test\soldat2-test_Data\Managed\UnityEngine.ParticleSystemModule.dll</HintPath>
+      </Reference>
       <Reference Include="UnityEngine.Physics2DModule">
         <HintPath>..\soldat2-windows-test\soldat2-test_Data\Managed\UnityEngine.Physics2DModule.dll</HintPath>
       </Reference>
@@ -64,6 +67,8 @@
       </Reference>
     </ItemGroup>
     <ItemGroup>
+      <Compile Include="Scripts\Custom\AsymmetricMapFix.cs" />
+      <Compile Include="Scripts\Custom\Infiltration.cs" />
       <Compile Include="Scripts\Custom\NavDbg.cs" />
       <Compile Include="Scripts\Custom\RankBalance.cs" />
       <Compile Include="Scripts\Custom\SnailBotsX.cs" />
