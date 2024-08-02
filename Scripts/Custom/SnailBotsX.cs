@@ -737,7 +737,7 @@ public class SnailBotsX: MonoBehaviour
 			
 			// Funnel
 			var currentTarget = nextWpPos;
-			var rayResults = new RaycastHit2D[8];
+			var rayResults = new RaycastHit2D[32];
 			for (int i = 0; i < Math.Min(navCurrentPath.Count, 16); i++)
 			{
 				NavX.NavPoint targ = navCurrentPath[i];
