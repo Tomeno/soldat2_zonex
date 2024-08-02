@@ -754,6 +754,26 @@ public class SnailBotsX: MonoBehaviour
 
 			return currentTarget;
 		}
+
+		//public Vector2 mouseTarget = Vector2.zero;
+		public Vector2 mouseCurrent = Vector2.zero;
+		public float mouseSpeed = 0.75f;
+		public float mouseDiv = 8f;
+
+		public void MoveMouse(Vector2 target)
+		{
+			var delta = target - mouseCurrent;
+			var deltaLen = delta.magnitude;
+			if (deltaLen < mouseSpeed)
+			{
+				mouseCurrent = target;
+				return;
+			}
+			var mouseMoveLen = Math.Max(Math.Min(mouseSpeed, deltaLen), deltaLen / mouseDiv);
+			var mouseMovement = delta.normalized * mouseMoveLen;
+			mouseCurrent += mouseMovement;
+		}
+		
 		
 		public int resetNavTimer = 0;
 		
@@ -1153,20 +1173,25 @@ public class SnailBotsX: MonoBehaviour
 					
 					if(killTargetDistance > toKillTarget.magnitude) {
 						canSeeKillTarget = true;
-						ControlsExtensions.SetAimWorld(c, kpos + overAim * overAimFactor);
-						// stop the bots from shooting while they're inside invincibility
-						if(plrToControl.GetTimeSinceRespawn() > (handicapsInvincibleAfterSpawnDuration + ((mystdobj.Health > handicapsSpawnHealth) ? 1.5f : 0f))) {
-							GostekWeapon gw = c.GetComponent<GostekWeapon>();
-							if(gw && gw.weapon) {
-								if(gw.weapon.IsReady()) {
-									c.SetKey(Key.Fire1, pressed: true);
-									//c.gameObject.AddTag("StopHandicap"); // does not actually work on the server :) nice
+						//ControlsExtensions.SetAimWorld(c, kpos + overAim * overAimFactor);
+						var mouseTarget = (kpos + overAim * overAimFactor) - cpos;
+						MoveMouse(mouseTarget);
+						c.SetAimWorld(cpos + mouseCurrent);
+						didFire = false;
+						if (Vector2.Distance(mouseTarget, mouseCurrent) < 2f)
+						{
+							// stop the bots from shooting while they're inside invincibility
+							if(plrToControl.GetTimeSinceRespawn() > (handicapsInvincibleAfterSpawnDuration + ((mystdobj.Health > handicapsSpawnHealth) ? 1.5f : 0f))) {
+								GostekWeapon gw = c.GetComponent<GostekWeapon>();
+								if(gw && gw.weapon) {
+									if(gw.weapon.IsReady()) {
+										c.SetKey(Key.Fire1, pressed: true);
+										//c.gameObject.AddTag("StopHandicap"); // does not actually work on the server :) nice
+									}
 								}
+								didFire = true;
 							}
-							didFire = true;
 						}
-						else 
-							didFire = false;
 					} else {
 						c.SetKey(Key.Fire1, pressed: false);
 					}
@@ -1195,12 +1220,16 @@ public class SnailBotsX: MonoBehaviour
 			if(!canSeeKillTarget) {
 				if (gotoPosition.Equals(NULLVEC) || gm.v.superman) {
 					c.SetAimWorld(cpos + new Vector2(hAxis, 0));
+					//MoveMouse((kpos + overAim * overAimFactor) - cpos);
+					//c.SetAimWorld(cpos + mouseCurrent);
 				} else {
 					Vector2 delta = gotoPosition - cpos;
-					if (delta.magnitude > 100) {
-						delta = delta.normalized * 100;
+					if (delta.magnitude > 40) {
+						delta = delta.normalized * 40;
 					}
-					c.SetAimWorld(cpos + delta);
+					//c.SetAimWorld(cpos + delta);
+					MoveMouse(delta);
+					c.SetAimWorld(cpos + mouseCurrent);
 				}
 			}
 			
