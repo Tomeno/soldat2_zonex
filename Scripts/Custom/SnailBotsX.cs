@@ -1633,7 +1633,7 @@ public class SnailBotsX: MonoBehaviour
 		for (float lerp = 0f; lerp < 1f; lerp += step) {
 			Vector2 lerpS = Vector2.Lerp(start, end, lerp);
 			if (lerpS.x > -10 && lerpS.y > -10 && lerpS.x < maxX && lerpS.y < maxY)
-				GUI.Label(new Rect(lerpS.x - 5, lerpS.y - 20, 100, 100), ".");
+				GUI.Label(new Rect(lerpS.x - 3, lerpS.y - 22, 20, 28), ".");
 		}
 	}
 	
@@ -1656,7 +1656,8 @@ public class SnailBotsX: MonoBehaviour
 	// Debug overlay
 	private void OnGUI() {
 		Player local = Players.Get.GetLocalPlayer();
-		if (local is null)
+		//if (!local || !local.controlled)
+		if (!local)
 			return;
 		
 		GUI.skin.label.fontSize = 22;
@@ -1665,18 +1666,27 @@ public class SnailBotsX: MonoBehaviour
 		GameCamera camera = GameCamera.Get;
 		
 		WaypointManager wpm = WaypointManager.instance;
+
+		var lcon = camera.Target.input;
 		
-		if (local.IsSpectator() && !(camera is null) && !(camera.Target is null)) {
+		if (local.IsSpectator() && camera && camera.Target) {
 			GUI.skin.label.normal.textColor = new Color(1f, 0f, 0f, 1f);
 			Vector3 pointer = camera.Target.input.GetPointer(Pointer.AimWorld);
 			Vector3 player = camera.Target.transform.position;
 			//camera.MoveToPosition(player);
-			Vector3 pointerA = camera.Target.input.GetPointer(Pointer.Aim);
+			// outdated pointer, we need to extrapolate it
+			//if (pointer == camera.Target.prevInput.GetPointer(Pointer.AimWorld))
+			//{
+				// how do we do this?
+			//}
 			Vector2 pointerS = W2S(pointer);
 			Vector2 playerS = W2S(player);
 			Vector2 deltaStep = pointerS - playerS;
 			DrawDottedLine(playerS, pointerS, 20);
-			GUI.Label(new Rect(pointerS.x - 5, pointerS.y - 10, 100, 100), "X");
+			GUI.Label(new Rect(pointerS.x - 7, pointerS.y - 16, 100, 100), "X");
+
+			if (!Net.IsServer)
+				return;
 			
 			SnailBot bot = FindSnailBotForPlayer(camera.Target.player);
 			if (bot != null) {
