@@ -1,0 +1,251 @@
+[
+  {
+    "Rules": "CaptureTheFlag",
+    "Level": "ctf_hormone",
+    "Modifiers": [
+      "BotsX",
+      "ReverseFlags"
+    ],
+    "Condition": "players >= 4 && players <= 8"
+  },
+  {
+    "Rules": "CaptureTheFlag",
+    "Level": "ctf_laos",
+    "Modifiers": ["BotsX"],
+    "Condition": "players >= 8"
+  },
+  {
+    "Rules": "CaptureTheFlag",
+    "Level": "dom_silo",
+    "Modifiers": ["BotsX"],
+    "Condition": "players >= 8"
+  },
+  {
+    "Rules": "CaptureTheFlag",
+    "Level": "ctf_steel",
+    "Modifiers": ["BotsX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "CaptureTheFlag",
+    "Level": "ctf_cobra",
+    "Modifiers": ["BotsX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "CaptureTheFlag",
+    "Level": "ctf_snakebite",
+    "Modifiers": ["BotsX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "CaptureTheFlag",
+    "Level": "ctf_crossfire",
+    "Modifiers": ["BotsX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "CaptureTheFlag",
+    "Level": "ctf_wretch",
+    "Modifiers": ["BotsX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "CaptureTheFlag",
+    "Level": "ctf_dogbite",
+    "Modifiers": ["BotsX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "CaptureTheFlag",
+    "Level": "ctf_campsite",
+    "Modifiers": ["BotsX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "CaptureTheFlag",
+    "Level": "ctf_lanubya",
+    "Modifiers": ["BotsX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "CaptureTheFlag",
+    "Level": "ctf_ash",
+    "Modifiers": ["BotsX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "CaptureTheFlag",
+    "Level": "ctf_x",
+    "Modifiers": ["BotsX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "CaptureTheFlag",
+    "Level": "ctf_x",
+    "Modifiers": ["BotsX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "Deathmatch",
+    "Level": "dm_arena",
+    "Modifiers": ["BotsX"],
+    "Condition": "players < 6"
+  },
+  {
+    "Rules": "Deathmatch",
+    "Level": "dm_arena2",
+    "Modifiers": ["BotsX"],
+    "Condition": "players < 6"
+  },
+  {
+    "Rules": "Deathmatch",
+    "Level": "dm_rogue",
+    "Modifiers": ["BotsX"],
+    "Condition": "players < 6"
+  },
+  {
+    "Rules": "Domination",
+    "Level": "dom_stronghold",
+    "Modifiers": ["BotsX"],
+    "Condition": "players > 12"
+  },
+  {
+    "Rules": "Domination",
+    "Level": "dom_silo",
+    "Modifiers": ["BotsX"],
+    "Condition": "players > 12"
+  },
+  {
+    "Rules": "CaptureTheFlag",
+    "Level": "ctf_guardian",
+    "Modifiers": ["BotsX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "CaptureTheFlag",
+    "Level": "ctf_limbo",
+    "Modifiers": ["BotsX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "CaptureTheFlag",
+    "Level": "ctf_division",
+    "Modifiers": ["BotsX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "Deathmatch",
+    "Level": "dm_emblem",
+    "Modifiers": ["BotsX"],
+    "Condition": "players <= 6"
+  },
+  {
+    "Rules": "CaptureTheFlag",
+    "Level": "ctf_atlantis",
+    "Modifiers": ["BotsX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "CaptureTheFlag",
+    "Level": "ctf_dusk",
+    "Modifiers": ["BotsX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "CaptureTheFlag",
+    "Level": "ctf_voland",
+    "Modifiers": ["BotsX"],
+    "Condition": "players >= 8"
+  },
+  {
+    "Rules": "CaptureTheFlag",
+    "Level": "ctf_busta",
+    "Modifiers": ["BotsX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "CaptureTheFlag",
+    "Level": "ctf_brutalist",
+    "Modifiers": ["BotsX"],
+    "Condition": "players >= 8"
+  },
+  {
+    "Rules": "CaptureTheFlag",
+    "Level": "ctf_basalt",
+    "Modifiers": ["BotsX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "CaptureTheFlag",
+    "Level": "ctf_anthill",
+    "Modifiers": ["BotsX"],
+    "Condition": "players >= 4"
+  },
+  {
+    "Rules": "CaptureTheFlag",
+    "Level": "ctf_huracan",
+    "Modifiers": ["BotsX"],
+    "Condition": "players >= 4"
+  },
+  {
+    "Rules": "CaptureTheFlag",
+    "Level": "ctf_jungle",
+    "Modifiers": ["BotsX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "CaptureTheFlag",
+    "Level": "ctf_newbia",
+    "Modifiers": ["BotsX"],
+    "Condition": "players >= 4"
+  },
+  {
+    "Rules": "CaptureTheFlag",
+    "Level": "ctf_spark",
+    "Modifiers": ["BotsX"],
+    "Condition": "players >= 2"
+  },
+  {
+    "Rules": "Deathmatch",
+    "Level": "dm_gear",
+    "Modifiers": ["BotsX"],
+    "Condition": "players < 4"
+  },
+  {
+    "Rules": "Deathmatch",
+    "Level": "dm_lab",
+    "Modifiers": ["BotsX"],
+    "Condition": "players < 4"
+  },
+  {
+    "Rules": "Deathmatch",
+    "Level": "dm_rift",
+    "Modifiers": ["BotsX"],
+    "Condition": "players < 6"
+  },
+  {
+    "Rules": "Deathmatch",
+    "Level": "dm_solstice",
+    "Modifiers": ["BotsX"],
+    "Condition": "players < 6"
+  },
+  {
+    "Rules": "Deathmatch",
+    "Level": "dm_soldat",
+    "Modifiers": ["BotsX"],
+    "Condition": "players < 6"
+  },
+  {
+    "Rules": "Deathmatch",
+    "Level": "dm_stratum",
+    "Modifiers": ["BotsX"],
+    "Condition": "players < 6"
+  },
+  {
+    "Rules": "Deathmatch",
+    "Level": "dm_zero",
+    "Modifiers": ["BotsX"],
+    "Condition": "players < 6"
+  }
+]

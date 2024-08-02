@@ -1,0 +1,247 @@
+/*RULES
+Remove variable for default value
+All times are in seconds
+Colors are #RRGGBBAA, #RRGGBB with alpha FF or names eg. red, cyan, blue*/{
+  "Objects": {
+    "Infiltration": {
+      "RulesSetup": {
+        "Name": "Infiltration",
+        "Description": "Alpha tries to steal Bravo's flag",
+        "LevelsPrefixes": "ctf dom inf",
+        "CanManageBots": true
+      },
+      "StandardGameplay": {
+        "DamageModifier": 1.0,
+        "SelfDamageModifier": 1.0
+      },
+      "Respawning": {
+        "NoSpawnText": "No spawn point left..."
+      },
+      "Match": {
+        "MinimumPlayers": 2,
+        "ScoreLimit": 70,
+        "ScoreLimitScaleByPlayers": 0.0,
+        "MatchSecsScaleByPlayers": 0.0,
+        "MatchSecs": 600,
+        "WarmupSecs": 8,
+        "EndGameSecs": 15,
+        "MultiplayerOnlyWarmup": true,
+        "NoDamageDuringWarmup": true,
+        "NoDamageAfterEnd": true,
+        "ShowWeaponsDuringWarmup": false,
+        "ResetProperties": [
+          "score",
+          "kills",
+          "deaths"
+        ]
+      },
+      "MatchEffects": {
+        "ShowScoreboardOnEnd": false,
+        "OnWarmupText": "",
+        "OnWaitingText": "Waiting for players... {0} to go",
+        "OnStartText": "FIGHT!",
+        "OnEndedText": ""
+      },
+      "ResetMapObjects": {
+        "OnMatchStart": true,
+        "DestroyTags": [
+          "Weapon",
+          "Powerup",
+          "Bullet",
+          "Pickable",
+          "Flag",
+          "Explosive"
+        ],
+        "DestroyCarriedTags": [
+          "Flag"
+        ]
+      },
+      "ChangePlayerAppearance": {
+        "ForceTeamColors": true
+      },
+      "BotsModifier": {
+        "BotDecisions": [
+          "ReturnTeamFlag",
+          "GrabEnemyFlag",
+          "Danger",
+          "GrabPowerup",
+          "Cover",
+          "ThrowGrenade",
+          "EngageGun"
+        ]
+      },
+      "Teams": {
+        "Teams": [
+          {
+            "Name": "Bravo",
+            "Color": "2096DDFF",
+            "Prefab": "Gostek",
+            "UseTeamUpperBodyColor": false,
+            "UpperBodyColor": "2096DDFF",
+            "UseTeamLowerBodyColor": false,
+            "LowerBodyColor": "2096DDFF",
+            "UseTeamHatColor": false,
+            "HatColor": "2096DDFF",
+            "UseTeamJetsColor": false,
+            "DamageScale": 1.0
+          },
+          {
+            "Name": "Alpha",
+            "Color": "D9243DFF",
+            "Prefab": "Gostek",
+            "UseTeamUpperBodyColor": false,
+            "UpperBodyColor": "D9243DFF",
+            "UseTeamLowerBodyColor": false,
+            "LowerBodyColor": "D9243DFF",
+            "UseTeamHatColor": false,
+            "HatColor": "D9243DFF",
+            "UseTeamJetsColor": false,
+            "DamageScale": 1.0
+          }
+        ]
+      },
+      "BalanceTeams": {
+        "UnbalancedDifferenceAdd": 0
+      },
+      "SpawnLoadout": {
+        "InitialWeapon": "",
+        "InitialWeapon2": "",
+        "Grenades": 1,
+        "GrenadesMax": 2,
+        "GrenadeType": "RGD5",
+        "AmmoClips": 9999999,
+        "AmmoClipsMax": 9999999,
+        "RandomIfNotAvailable": true
+      },
+      "Available": {
+        "PrimaryWeapons": [
+          "Deagles",
+          "MP5",
+          "SteyrAUG",
+          "Kalashnikov",
+          "Spas12",
+          "M79",
+          "Dragunov",
+          "Barrett",
+          "Rheinmetall",
+          "RocketLauncher",
+          "Minigun"
+        ],
+        "SecondaryWeapons": [
+          "Makarov",
+          "Knife",
+          "Chainsaw",
+          "RPG"
+        ],
+        "Items": [],
+        "DisabledWeapons": []
+      },
+      "KillsDeathsCount": {
+        "KillScore": 1,
+        "SuicideScore": -1,
+        "ScoreForTeamOnDie": 0,
+        "MultiKillSecs": 3.0
+      },
+      "DeathDrops": {
+        "Drops": [
+          {
+            "Prefab": "MedkitDrop",
+            "Timeout": 10,
+            "Probability": 1.0,
+            "Amount": 0.33,
+            "Floater": false
+          },
+          {
+            "Prefab": "GrenadesPack",
+            "Timeout": 10,
+            "Probability": 0.5,
+            "Amount": 1.0,
+            "Floater": false
+          }
+        ],
+        "DropAfterSecs": 0.11,
+        "ThrowVelocity": 2.0,
+        "GrenadesAmountIsCarriedAmount": true,
+        "MedkitAmountIsKillerLoss": false,
+        "Limiter": true,
+        "OnlyIfKiller": true
+      },
+      "TimeOutDrops": {
+        "TimeOutSecs": 10.0
+      },
+      "StandardModifier": {
+        "JetsAmount": 1.0
+      },
+      "Handicaps": {
+        "SpawnHealth": 1.0,
+        "InvincibleAfterSpawnDuration": 1.2,
+        "DecreaseOverDefaultHealthInterval": 1.0,
+        "DecreaseOverDefaultHealthAmount": 0.05,
+        "OnlyHumans": false,
+        "SkillBasedSpawnHealth": 0.0
+      },
+      "TeamRespawning": {
+        "JoinDelaySecs": 2.0,
+        "RespawnSecs": 2.5,
+        "MaxRespawnSecs": 5.0,
+        "PlayerIncreaseRespawnSecs": 0.1,
+        "WeaponryPrefab": "StandardWeaponry",
+        "ShowWeaponry": true,
+        "AllowRespawning": true,
+        "RespawnType": 0
+      },
+      "RandomDrops": {
+        "FrequencySecs": 5.0,
+        "ScaleByMapSize": false,
+        "ScaleByPlayersCount": true,
+        "Drops": [
+          {
+            "Prefab": "MedkitDrop",
+            "Timeout": 30,
+            "Probability": 0.45,
+            "Amount": 0.5,
+            "Floater": true
+          },
+          {
+            "Prefab": "GrenadesPack",
+            "Timeout": 30,
+            "Probability": 0.45,
+            "Amount": 2.0,
+            "Floater": true
+          }
+        ]
+      },
+      "HandleBases": {
+        "Style": 2,
+        "HaveSandbags": false,
+        "HaveRoofs": false,
+        "CanCapture": false,
+        "CaptureSecs": 0.0,
+        "ReverseBases": false,
+        "ReverseFlags": false,
+        "ReverseBaseRespawns": false,
+        "MinTeamPlayersForFlags": 0
+      },
+      "StandardEndConditions": {
+        "TimeLimitReached": true,
+        "WinSound": "Match:Win",
+        "LoseSound": "Match:Lose",
+        "TieSound": "Match:Tie"
+      },
+	  "AsymmetricMapFix": {},
+      "GameScript": {
+        "Scripts": [
+          "Infiltration"
+        ]
+      }
+    }
+  },
+  "Meta": {
+    "Description": "Infiltration gamemode ported to S2 by Tomeno",
+    "Thumbnail": "",
+    "Author": "Tomeno",
+    "Version": "1",
+    "Game": "Soldat2",
+    "GameVersion": "0.8.71"
+  }
+}

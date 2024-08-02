@@ -1,0 +1,164 @@
+[
+  {
+    "Rules": "Infiltration",
+    "Level": "ctf_laos",
+    "Modifiers": ["ZoneX"],
+    "Condition": "players >= 8"
+  },
+  {
+    "Rules": "Infiltration",
+    "Level": "dom_silo",
+    "Modifiers": ["ZoneX"],
+    "Condition": "players >= 8"
+  },
+  {
+    "Rules": "Infiltration",
+    "Level": "ctf_steel",
+    "Modifiers": ["ZoneX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "Infiltration",
+    "Level": "ctf_cobra",
+    "Modifiers": ["ZoneX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "Infiltration",
+    "Level": "ctf_snakebite",
+    "Modifiers": ["ZoneX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "Infiltration",
+    "Level": "ctf_crossfire",
+    "Modifiers": ["ZoneX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "Infiltration",
+    "Level": "ctf_wretch",
+    "Modifiers": ["ZoneX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "Infiltration",
+    "Level": "ctf_dogbite",
+    "Modifiers": ["ZoneX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "Infiltration",
+    "Level": "ctf_campsite",
+    "Modifiers": ["ZoneX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "Infiltration",
+    "Level": "ctf_lanubya",
+    "Modifiers": ["ZoneX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "Infiltration",
+    "Level": "ctf_ash",
+    "Modifiers": ["ZoneX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "Infiltration",
+    "Level": "ctf_x",
+    "Modifiers": ["ZoneX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "Infiltration",
+    "Level": "ctf_x",
+    "Modifiers": ["ZoneX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "Infiltration",
+    "Level": "ctf_guardian",
+    "Modifiers": ["ZoneX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "Infiltration",
+    "Level": "ctf_limbo",
+    "Modifiers": ["ZoneX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "Infiltration",
+    "Level": "ctf_division",
+    "Modifiers": ["ZoneX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "Infiltration",
+    "Level": "ctf_atlantis",
+    "Modifiers": ["ZoneX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "Infiltration",
+    "Level": "ctf_dusk",
+    "Modifiers": ["ZoneX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "Infiltration",
+    "Level": "ctf_voland",
+    "Modifiers": ["ZoneX"],
+    "Condition": "players >= 8"
+  },
+  {
+    "Rules": "Infiltration",
+    "Level": "ctf_busta",
+    "Modifiers": ["ZoneX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "Infiltration",
+    "Level": "ctf_brutalist",
+    "Modifiers": ["ZoneX"],
+    "Condition": "players >= 8"
+  },
+  {
+    "Rules": "Infiltration",
+    "Level": "ctf_basalt",
+    "Modifiers": ["ZoneX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "Infiltration",
+    "Level": "ctf_anthill",
+    "Modifiers": ["ZoneX"],
+    "Condition": "players >= 4"
+  },
+  {
+    "Rules": "Infiltration",
+    "Level": "ctf_huracan",
+    "Modifiers": ["ZoneX"],
+    "Condition": "players >= 4"
+  },
+  {
+    "Rules": "Infiltration",
+    "Level": "ctf_jungle",
+    "Modifiers": ["ZoneX"],
+    "Condition": "players >= 6"
+  },
+  {
+    "Rules": "Infiltration",
+    "Level": "ctf_newbia",
+    "Modifiers": ["ZoneX"],
+    "Condition": "players >= 4"
+  },
+  {
+    "Rules": "Infiltration",
+    "Level": "ctf_spark",
+    "Modifiers": ["ZoneX"],
+    "Condition": "players >= 2"
+  }
+]

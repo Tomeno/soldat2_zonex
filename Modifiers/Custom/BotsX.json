@@ -1,0 +1,30 @@
+{
+  "Objects": {
+    "Rules": {
+	  "SlowFinale": {},
+	  "VoteFix": {},
+      "ColoredTrails": {
+        "TeamGamesOnly": false,
+        "ColorizeBullets": true
+      },
+      "KillsDeathsCount": {
+        "MultiKillSecs": 5.0
+      },
+      "Available": {
+        "-PrimaryWeapons": ["Minigun"]
+      },
+	  "RankBalance": {},
+      "SnailBotsX": {},
+      "BotsModifier": {
+        "BotDecisions": []
+      }
+    }
+  },
+  "Meta": {
+    "Description": "BotsX",
+    "Author": "Tomeno",
+    "Version": "N/A",
+    "Game": "Soldat2",
+    "GameVersion": "0.8.7"
+  }
+}
