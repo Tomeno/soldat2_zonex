@@ -1,14 +1,16 @@
-﻿/*
-  Infiltration mode
-    Edited from CTF By Tomeno | 2024-07-24
-*/
-
-using System.Linq;
+﻿using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using Newtonsoft.Json;
 using Teal;
 using UberAudio;
+
+/*
+ * Infiltration mode, ported from Soldat 1, based on CTF code by MM
+ * author: Tomeno
+ * script version: 1.1
+ * target game version: 0.8.71a
+ */
 
 [RequireComponent(typeof(Match))]
 [RequireComponent(typeof(Teams))]
