@@ -642,56 +642,6 @@ public class SnailBotsX: MonoBehaviour
 		public NavX.NavPoint navNextWaypoint = null;
 		public List<NavX.NavPoint> navCurrentPath = null;
 		
-		public List<Waypoint> AStarPath(Waypoint start, Waypoint target) {
-			List<Waypoint> path = new List<Waypoint>();
-			PriorityQueue<Waypoint> openSet = new PriorityQueue<Waypoint>();
-			Dictionary<Waypoint, Waypoint> cameFrom = new Dictionary<Waypoint, Waypoint>();
-			Dictionary<Waypoint, float> gScore = new Dictionary<Waypoint, float>();
-			Dictionary<Waypoint, float> fScore = new Dictionary<Waypoint, float>();
-
-			gScore[start] = 0;
-			fScore[start] = HeuristicCostEstimate(start, target);
-			openSet.Enqueue(start, fScore[start]);
-
-			while (openSet.Count > 0) {
-				Waypoint current = openSet.Dequeue();
-				if (current == target) {
-					path = ReconstructPath(cameFrom, current);
-					break;
-				}
-				foreach (Waypoint.Connection neighborConn in current.connections) {
-					Waypoint neighbor = neighborConn.waypoint;
-					float tentativeGScore = gScore[current] + DistanceBetween(current, neighbor);
-					if (!gScore.ContainsKey(neighbor) || tentativeGScore < gScore[neighbor]) {
-						cameFrom[neighbor] = current;
-						gScore[neighbor] = tentativeGScore;
-						fScore[neighbor] = gScore[neighbor] + HeuristicCostEstimate(neighbor, target);
-						if (!openSet.Contains(neighbor)) {
-							openSet.Enqueue(neighbor, fScore[neighbor]);
-						}
-					}
-				}
-			}
-			return path;
-		}
-
-		private float HeuristicCostEstimate(Waypoint a, Waypoint b) {
-			return Vector3.Distance(a.transform.position, b.transform.position);
-		}
-
-		private float DistanceBetween(Waypoint a, Waypoint b) {
-			return Vector3.Distance(a.transform.position, b.transform.position);
-		}
-
-		private List<Waypoint> ReconstructPath(Dictionary<Waypoint, Waypoint> cameFrom, Waypoint current) {
-			List<Waypoint> totalPath = new List<Waypoint> { current };
-			while (cameFrom.ContainsKey(current)) {
-				current = cameFrom[current];
-				totalPath.Insert(0, current);
-			}
-			return totalPath;
-		}
-		
 		public void SetNavTarget(Vector2 pos, Vector2 newTarget) {
 			if (newTarget.Equals(navFinalTarget))
 				return;
@@ -947,9 +897,6 @@ public class SnailBotsX: MonoBehaviour
 		
 		private Vector2 altPos = new Vector2(0,0);
 		private Vector2 lastPosition = new Vector2(0,0);
-		
-		private List<NavX.NavPoint> currentPath = null;
-		private NavX.NavPoint currentWaypointX = null;
 		private bool waitForJets = false;
 		private Vector2 NULLVEC = new Vector2(0,0);
 		
