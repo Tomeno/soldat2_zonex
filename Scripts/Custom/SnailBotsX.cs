@@ -1640,128 +1640,155 @@ public class SnailBotsX: MonoBehaviour
 	}
 	
 	// Debug overlay
-	private void OnGUI() {
-		Player local = Players.Get.GetLocalPlayer();
-		//if (!local || !local.controlled)
-		if (!local)
-			return;
-		
-		GUI.skin.label.fontSize = 22;
-		GUI.skin.label.normal.textColor = new Color(1f, 0f, 0f, 1f);
-		
-		GameCamera camera = GameCamera.Get;
-		
-		WaypointManager wpm = WaypointManager.instance;
-
-		var lcon = camera.Target.input;
-		
-		if (local.IsSpectator() && camera && camera.Target) {
-			GUI.skin.label.normal.textColor = new Color(1f, 0f, 0f, 1f);
-			Vector3 pointer = camera.Target.input.GetPointer(Pointer.AimWorld);
-			Vector3 player = camera.Target.transform.position;
-			//camera.MoveToPosition(player);
-			// outdated pointer, we need to extrapolate it
-			//if (pointer == camera.Target.prevInput.GetPointer(Pointer.AimWorld))
-			//{
-				// how do we do this?
-			//}
-			Vector2 pointerS = W2S(pointer);
-			Vector2 playerS = W2S(player);
-			Vector2 deltaStep = pointerS - playerS;
-			DrawDottedLine(playerS, pointerS, 20);
-			GUI.Label(new Rect(pointerS.x - 7, pointerS.y - 16, 100, 100), "X");
-
-			if (!Net.IsServer)
+	private void OnGUI()
+	{
+		var line = 0;
+		try
+		{
+			Player local = Players.Get.GetLocalPlayer();
+			//if (!local || !local.controlled)
+			if (!local)
 				return;
-			
-			SnailBot bot = FindSnailBotForPlayer(camera.Target.player);
-			if (bot != null) {
-				if (!bot.navFinalTarget.Equals(Vector3.zero)) {
-					GUI.skin.label.normal.textColor = new Color(1f, 1f, 0f, 1f);
-					Vector3 navFinalTargetDir = bot.navFinalTarget - player;
-					Vector2 navFinalTargetS = W2S(bot.navFinalTarget);
-					Vector2 navFinalTargetS2 = W2S(player + (navFinalTargetDir.normalized * 25));
-					DrawDottedLine(playerS, navFinalTargetS, 50);
-					//if (navFinalTargetDir.magnitude > 25)
-					//	GUI.Label(new Rect(navFinalTargetS2.x - 5, navFinalTargetS2.y - 10, 100, 100), "t");
-					//else
-					//	DrawDottedLine(playerS, navFinalTargetS, 50);
-					GUI.Label(new Rect(100, 40, 500, 500), "CurrentPoint: " + (bot.navCurrentWaypoint));
-					GUI.Label(new Rect(100, 70, 500, 500), "NextPoint: " + (bot.navNextWaypoint));
-					GUI.Label(new Rect(100, 100, 500, 500), "NavPath: " + (bot.navCurrentPath == null));
-					if (bot.navCurrentPath != null)
-						GUI.Label(new Rect(100, 130, 500, 500), "PathLen: " + bot.navCurrentPath.Count);
+			line = 1;
 
-					if (bot.ourFlag && bot.theirFlag)
+			GUI.skin.label.fontSize = 22;
+			GUI.skin.label.normal.textColor = new Color(1f, 0f, 0f, 1f);
+
+			GameCamera camera = GameCamera.Get;
+			line = 2;
+
+			if (local.IsSpectator() && camera && camera.Target)
+			{
+				GUI.skin.label.normal.textColor = new Color(1f, 0f, 0f, 1f);
+				Vector3 pointer = camera.Target.input.GetPointer(Pointer.AimWorld);
+				Vector3 player = camera.Target.transform.position;
+				line = 3;
+				//camera.MoveToPosition(player);
+				// outdated pointer, we need to extrapolate it
+				//if (pointer == camera.Target.prevInput.GetPointer(Pointer.AimWorld))
+				//{
+				// how do we do this?
+				//}
+				Vector2 pointerS = W2S(pointer);
+				Vector2 playerS = W2S(player);
+				Vector2 deltaStep = pointerS - playerS;
+				DrawDottedLine(playerS, pointerS, 30);
+				GUI.Label(new Rect(pointerS.x - 7, pointerS.y - 16, 100, 100), "X");
+				line = 4;
+
+				if (!Net.IsServer)
+					return;
+
+				SnailBot bot = FindSnailBotForPlayer(camera.Target.player);
+				line = 5;
+				if (bot != null)
+				{
+					if (!bot.navFinalTarget.Equals(Vector3.zero))
 					{
-						GUI.Label(new Rect(300, 40, 500, 500), "Our flag dropped: " + bot.ourFlag.dropped + " inbase: " + bot.ourFlag.inbase + " safe: " + bot.ourFlag.safe);
-						GUI.Label(new Rect(300, 70, 500, 500), "Our flag carried: " + bot.ourFlag.carried + " grabbed: " + bot.ourFlag.grabbed);
-						GUI.Label(new Rect(300, 100, 500, 500), "Their flag dropped: " + bot.theirFlag.dropped + " inbase: " + bot.theirFlag.inbase + " safe: " + bot.theirFlag.safe);
-						GUI.Label(new Rect(300, 130, 500, 500), "Their flag carried: " + bot.theirFlag.carried + " grabbed: " + bot.theirFlag.grabbed);
-						var theirHolder = GetFlagHolderPlayer(bot.theirFlag);
-						if (theirHolder)
-							GUI.Label(new Rect(300, 160, 500, 500), "Their flag carrier: " +  theirHolder.nick);
-					}
-					
-					GUI.Label(new Rect(navFinalTargetS.x - 5, navFinalTargetS.y - 10, 100, 100), "T");
-					if (bot.navCurrentWaypoint != null) {
-						GUI.skin.label.normal.textColor = new Color(0f, 0f, 1f, 1f);
-						Vector2 navCurrentWaypointS = W2S(bot.navCurrentWaypoint.pos);
-						GUI.Label(new Rect(navCurrentWaypointS.x - 5, navCurrentWaypointS.y - 10, 100, 100), "C");
-						if (bot.navNextWaypoint != null) {
-							GUI.skin.label.normal.textColor = new Color(0f, 1f, 1f, 1f);
-							Vector3 navCurrentConnPos = bot.navNextWaypoint.pos;
-							Vector2 navCurrentConnectionS = W2S(navCurrentConnPos);
-							GUI.Label(new Rect(navCurrentConnectionS.x - 5, navCurrentConnectionS.y - 10, 100, 100), "N");
-							if (bot.navCurrentPath != null && bot.navCurrentPath.Count > 0) {
-								GUI.skin.label.normal.textColor = new Color(0f, 1f, 0f, 0.5f);
-								//Waypoint.Connection[] conns = bot.navCurrentPath.ToArray();
-								Vector2 prevConnPosS = navCurrentConnectionS;
-								foreach (NavX.NavPoint wpConn in bot.navCurrentPath) {
-									Vector2 nextConnPosS = W2S(wpConn.pos);
-									GUI.Label(new Rect(nextConnPosS.x - 5, nextConnPosS.y - 10, 100, 100), "w");
-									DrawDottedLine(prevConnPosS, nextConnPosS, 4);
-									prevConnPosS = nextConnPosS;
+						GUI.skin.label.normal.textColor = new Color(1f, 1f, 0f, 1f);
+						Vector3 navFinalTargetDir = bot.navFinalTarget - player;
+						Vector2 navFinalTargetS = W2S(bot.navFinalTarget);
+						Vector2 navFinalTargetS2 = W2S(player + (navFinalTargetDir.normalized * 25));
+						DrawDottedLine(playerS, navFinalTargetS, 50);
+						line = 6;
+						//if (navFinalTargetDir.magnitude > 25)
+						//	GUI.Label(new Rect(navFinalTargetS2.x - 5, navFinalTargetS2.y - 10, 100, 100), "t");
+						//else
+						//	DrawDottedLine(playerS, navFinalTargetS, 50);
+
+						/*
+						GUI.Label(new Rect(100, 40, 500, 500), "CurrentPoint: " + (bot.navCurrentWaypoint));
+						GUI.Label(new Rect(100, 70, 500, 500), "NextPoint: " + (bot.navNextWaypoint));
+						GUI.Label(new Rect(100, 100, 500, 500), "NavPath: " + (bot.navCurrentPath == null));
+						if (bot.navCurrentPath != null)
+							GUI.Label(new Rect(100, 130, 500, 500), "PathLen: " + bot.navCurrentPath.Count);
+
+						if (bot.ourFlag && bot.theirFlag)
+						{
+							GUI.Label(new Rect(300, 40, 500, 500), "Our flag dropped: " + bot.ourFlag.dropped + " inbase: " + bot.ourFlag.inbase + " safe: " + bot.ourFlag.safe);
+							GUI.Label(new Rect(300, 70, 500, 500), "Our flag carried: " + bot.ourFlag.carried + " grabbed: " + bot.ourFlag.grabbed);
+							GUI.Label(new Rect(300, 100, 500, 500), "Their flag dropped: " + bot.theirFlag.dropped + " inbase: " + bot.theirFlag.inbase + " safe: " + bot.theirFlag.safe);
+							GUI.Label(new Rect(300, 130, 500, 500), "Their flag carried: " + bot.theirFlag.carried + " grabbed: " + bot.theirFlag.grabbed);
+							var theirHolder = GetFlagHolderPlayer(bot.theirFlag);
+							if (theirHolder)
+								GUI.Label(new Rect(300, 160, 500, 500), "Their flag carrier: " +  theirHolder.nick);
+						}
+						*/
+
+						GUI.Label(new Rect(navFinalTargetS.x - 5, navFinalTargetS.y - 10, 100, 100), "T");
+						if (bot.navCurrentWaypoint != null)
+						{
+							GUI.skin.label.normal.textColor = new Color(0f, 0f, 1f, 1f);
+							Vector2 navCurrentWaypointS = W2S(bot.navCurrentWaypoint.pos);
+							GUI.Label(new Rect(navCurrentWaypointS.x - 5, navCurrentWaypointS.y - 10, 100, 100), "C");
+							if (bot.navNextWaypoint != null)
+							{
+								GUI.skin.label.normal.textColor = new Color(0f, 1f, 1f, 1f);
+								Vector3 navCurrentConnPos = bot.navNextWaypoint.pos;
+								Vector2 navCurrentConnectionS = W2S(navCurrentConnPos);
+								GUI.Label(new Rect(navCurrentConnectionS.x - 5, navCurrentConnectionS.y - 10, 100, 100),
+									"N");
+								if (bot.navCurrentPath != null && bot.navCurrentPath.Count > 0)
+								{
+									GUI.skin.label.normal.textColor = new Color(0f, 1f, 0f, 0.5f);
+									Vector2 prevConnPosS = navCurrentConnectionS;
+									foreach (NavX.NavPoint wpConn in bot.navCurrentPath)
+									{
+										Vector2 nextConnPosS = W2S(wpConn.pos);
+										GUI.Label(new Rect(nextConnPosS.x - 5, nextConnPosS.y - 10, 100, 100), "w");
+										DrawDottedLine(prevConnPosS, nextConnPosS, 4);
+										prevConnPosS = nextConnPosS;
+									}
 								}
 							}
 						}
+						line = 7;
 					}
 				}
 			}
-		}
-		
-		// Map map = Map.Get;
-		// int i = 0;
-		// Collider2D[] results = new Collider2D[1];
-		// foreach (GameObject gameObject in map.combine) {
+
+			// Map map = Map.Get;
+			// int i = 0;
+			// Collider2D[] results = new Collider2D[1];
+			// foreach (GameObject gameObject in map.combine) {
 			// ProtoshapeEdit[] componentsInChildren = gameObject.GetComponentsInChildren<ProtoshapeEdit>();
 			// for (int y = 0; y < componentsInChildren.Length; y++)
 			// {
-				// ProtoshapeEdit shape_edit = componentsInChildren[y];
-				// ProtoShape2D shape = shape_edit.ps2d;
-				// switch (shape_edit.mapData.type) {
-					// case ProtoshapeEdit.ColliderType.Solid:
-					// case ProtoshapeEdit.ColliderType.PlayersCollide:
-					// case ProtoshapeEdit.ColliderType.Platform:
-					// case ProtoshapeEdit.ColliderType.Climbable:
-						// foreach (PS2DColliderPoint point in shape.cpoints) {
-							// Vector2 wp = point.wPosition;
-							// wp += Vector2.up;//point.normal.normalized;
-							// Vector2 pt = camera.cam.WorldToScreenPoint(wp);
-							// int hits = Physics2D.OverlapPointNonAlloc(wp, results, WaypointX.raycastLayer);
-							// if (hits < 1)
-								// GUI.skin.label.normal.textColor = new Color(0f, 1f, 0f, 1f);
-							// else
-								// GUI.skin.label.normal.textColor = new Color(1f, 0f, 0f, 1f);
-							// GUI.Label(new Rect(pt.x - 5, Screen.height-pt.y - 20, 100, 100), "p");
-						// }
-						// break;
-					// default:
-						// break;
-				// }
-				// //GUI.Label(new Rect(600, 150 + i, 300, 100), componentsInChildren.Length.ToString());
+			// ProtoshapeEdit shape_edit = componentsInChildren[y];
+			// ProtoShape2D shape = shape_edit.ps2d;
+			// switch (shape_edit.mapData.type) {
+			// case ProtoshapeEdit.ColliderType.Solid:
+			// case ProtoshapeEdit.ColliderType.PlayersCollide:
+			// case ProtoshapeEdit.ColliderType.Platform:
+			// case ProtoshapeEdit.ColliderType.Climbable:
+			// foreach (PS2DColliderPoint point in shape.cpoints) {
+			// Vector2 wp = point.wPosition;
+			// wp += Vector2.up;//point.normal.normalized;
+			// Vector2 pt = camera.cam.WorldToScreenPoint(wp);
+			// int hits = Physics2D.OverlapPointNonAlloc(wp, results, WaypointX.raycastLayer);
+			// if (hits < 1)
+			// GUI.skin.label.normal.textColor = new Color(0f, 1f, 0f, 1f);
+			// else
+			// GUI.skin.label.normal.textColor = new Color(1f, 0f, 0f, 1f);
+			// GUI.Label(new Rect(pt.x - 5, Screen.height-pt.y - 20, 100, 100), "p");
 			// }
-		// }
+			// break;
+			// default:
+			// break;
+			// }
+			// //GUI.Label(new Rect(600, 150 + i, 300, 100), componentsInChildren.Length.ToString());
+			// }
+			// }
+		} catch (System.Exception ex) {
+			Debug.Log($"[BotsX.OnGUI] @@@@@ ERROR @@@@@ AT LINE " + line);
+			try {
+				Debug.Log($"[BotsX.OnGUI] Exception HRESULT " + ex.HResult.ToString("X") + " type " + ex.GetType());
+				Debug.Log($"[BotsX.OnGUI] Exception message: " + ex.Message);
+				//Debug.Log($"[BotsX.OnGUI] Exception trace: " + ex.StackTrace);
+			} catch (System.Exception ex2) {
+				Debug.Log($"[BotsX.OnGUI] Another exception occured inside handler, HRESULT " + ex2.HResult.ToString("X") + " type " + ex2.GetType());
+			}
+		}
 	}
 	
 	
