@@ -1165,12 +1165,12 @@ public class SnailBotsX: MonoBehaviour
 			}
 			
 			if(!canSeeKillTarget) {
-				if (gotoPosition.Equals(NULLVEC) || gm.v.superman) {
+				if (gotoPosition.Equals(NULLVEC)/* || gm.v.superman*/) {
 					c.SetAimWorld(cpos + new Vector2(hAxis, 0));
 					//MoveMouse((kpos + overAim * overAimFactor) - cpos);
 					//c.SetAimWorld(cpos + mouseCurrent);
 				} else {
-					Vector2 delta = gotoPosition - cpos;
+					Vector2 delta = gotoDelta;
 					if (delta.magnitude > 40) {
 						delta = delta.normalized * 40;
 					}
@@ -1296,6 +1296,16 @@ public class SnailBotsX: MonoBehaviour
 			
 			if (values[IDX_GOSTEK_GROUNDED] >= 0.99 && values[IDX_GOSTEK_SUPERMAN] >= 0.99) {
 				c.SetKey(Key.Superman, pressed: true); // leave superman if on ground.
+			}
+			if (gm.v.superman)
+			{
+				var aimWorld = c.GetAimWorld();
+				var aimDelta = aimWorld - cpos;
+				var aimingRight = aimDelta.x > 0;
+				var targetRight = gotoDelta.x > 0;
+				var match = (aimingRight == targetRight) ^ gm.v.supermanJetInverted;
+				if (!match)
+					c.SetKey(Key.Superman, pressed: true);
 			}
 			
 			lineReached = 13;
