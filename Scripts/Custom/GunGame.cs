@@ -23,7 +23,6 @@ public class GunGame : MonoBehaviour
 
     void Start()
     {
-        //Debug.Log("!!!![GunGame.Start]!!!!");
         scoreboard = Scoreboard.Get;
         match = GetComponent<Match>();
         match.effects.sayScoreAnnouncements = true;
@@ -35,35 +34,9 @@ public class GunGame : MonoBehaviour
         spawnLoadout.grenades = 0;
         var avail = Available.instance;
         avail.primaryWeapons.Clear();
-        /*if (Net.IsServer)
-            avail.primaryWeapons.AddRange(weaponProgression);
-        else
-            avail.primaryWeapons.Add(weaponProgression[0]);*/
         avail.secondaryWeapons.Clear();
         Debug.Log("[GunGame.Start] Set up GunGame");
     }
-
-    /*void Awake()
-    {
-        Debug.Log("!!!![GunGame.Awake]!!!!");
-        scoreboard = Scoreboard.Get;
-        match = GetComponent<Match>();
-        match.effects.sayScoreAnnouncements = true;
-        match.effects.sayKillsAnnouncements = true;
-        match.scoreLimit = weaponProgression.Count;
-        spawnLoadout = GetComponent<SpawnLoadout>();
-        spawnLoadout.randomIfNotAvailable = false;
-        spawnLoadout.grenadesMax = 0;
-        spawnLoadout.grenades = 0;
-        var avail = Available.instance;
-        avail.primaryWeapons.Clear();
-        if (Net.IsServer)
-            avail.primaryWeapons.AddRange(weaponProgression);
-        else
-            avail.primaryWeapons.Add(weaponProgression[0]);
-        avail.secondaryWeapons.Clear();
-        Debug.Log("[GunGame.Awake] Set up GunGame");
-    }*/
 
     void FixedUpdate()
     {
@@ -113,9 +86,6 @@ public class GunGame : MonoBehaviour
     {
         var wep = GetWeaponForScore(player.Int("score"));
         var oldWep = player.String("weapon");
-        //if (wep == player.String("weapon"))
-        //    return;
-        //Debug.Log("SET WEAPON FOR " + player + " to " + wep + " from " + player.String("weapon"));
         Eventor.Publish(Events.Weapon_Selected, new GlobalWeaponSelectEvent(base.gameObject, player, wep, ""));
         if (wep == oldWep)
             return;
@@ -203,7 +173,7 @@ public class GunGame : MonoBehaviour
             {
                 status += " losing" + " -" + pointsToLead;
             }
-            status += " <color=blue>Next: " + nextWep + "</color>";
+            status += " <color=cyan>Next: " + nextWep + "</color>";
             status += "</size>";
         }
 
