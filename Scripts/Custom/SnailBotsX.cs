@@ -1863,29 +1863,6 @@ public class SnailBotsX: MonoBehaviour
 						Vector2 navFinalTargetS2 = W2S(player + (navFinalTargetDir.normalized * 25));
 						DrawDottedLine(playerS, navFinalTargetS, 50);
 						line = 6;
-						//if (navFinalTargetDir.magnitude > 25)
-						//	GUI.Label(new Rect(navFinalTargetS2.x - 5, navFinalTargetS2.y - 10, 100, 100), "t");
-						//else
-						//	DrawDottedLine(playerS, navFinalTargetS, 50);
-
-						/*
-						GUI.Label(new Rect(100, 40, 500, 500), "CurrentPoint: " + (bot.navCurrentWaypoint));
-						GUI.Label(new Rect(100, 70, 500, 500), "NextPoint: " + (bot.navNextWaypoint));
-						GUI.Label(new Rect(100, 100, 500, 500), "NavPath: " + (bot.navCurrentPath == null));
-						if (bot.navCurrentPath != null)
-							GUI.Label(new Rect(100, 130, 500, 500), "PathLen: " + bot.navCurrentPath.Count);
-
-						if (bot.ourFlag && bot.theirFlag)
-						{
-							GUI.Label(new Rect(300, 40, 500, 500), "Our flag dropped: " + bot.ourFlag.dropped + " inbase: " + bot.ourFlag.inbase + " safe: " + bot.ourFlag.safe);
-							GUI.Label(new Rect(300, 70, 500, 500), "Our flag carried: " + bot.ourFlag.carried + " grabbed: " + bot.ourFlag.grabbed);
-							GUI.Label(new Rect(300, 100, 500, 500), "Their flag dropped: " + bot.theirFlag.dropped + " inbase: " + bot.theirFlag.inbase + " safe: " + bot.theirFlag.safe);
-							GUI.Label(new Rect(300, 130, 500, 500), "Their flag carried: " + bot.theirFlag.carried + " grabbed: " + bot.theirFlag.grabbed);
-							var theirHolder = GetFlagHolderPlayer(bot.theirFlag);
-							if (theirHolder)
-								GUI.Label(new Rect(300, 160, 500, 500), "Their flag carrier: " +  theirHolder.nick);
-						}
-						*/
 
 						GUI.Label(new Rect(navFinalTargetS.x - 5, navFinalTargetS.y - 10, 100, 100), "T");
 						if (bot.navCurrentWaypoint != null)
@@ -2054,23 +2031,6 @@ public class BotsXDecision : HumanBrain.HumanDecision
 		if (sb == null)
 			return true;
 		sb.FixedUpdate();
-		/*
-		StandardBrain.Target t = this.globals.enemyFlag;
-		bool flag = t == null || t.obj == null;
-		bool flag2;
-		if (flag)
-		{
-			flag2 = false;
-		}
-		else
-		{
-			this.brain.Nav(this.human.navigate, t.pos, this.human.navActions, this.human.navigate.keepDistance, true);
-			this.globals.controls.SetAimWorld(this.human.LerpAim(t.pos));
-			this.human.ShootEnemy(this);
-			bool flag3 = this.brain.GetStuckInPlaceSecs() > 5f;
-			flag2 = !flag3;
-		}
-		*/
 		return true;
 	}
 }
