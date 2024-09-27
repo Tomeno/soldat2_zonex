@@ -545,23 +545,39 @@ public class RankBalance : Modifiable
                 return;
             }
 
-        foreach (Player p in players) {
-            string pfid = PlayerPFID(p);
-            if (pfid == "") {
-                Debug.Log($"[RankBalance.SavePlayerScores] WARNING: player '{p.nick}' has no account ID");
-                continue;
+            foreach (Player p in players)
+            {
+                string pfid = PlayerPFID(p);
+                if (pfid == "")
+                {
                     Debug.Log($"[RankBalance.SavePlayerScores] WARNING: player '{p.nick}' has no account ID");
                     continue;
                 }
+
+                PubScore score = new PubScore(p.nick);
+                if (pubscores.ContainsKey(pfid))
+                    score = PubScore.fromDict(p.nick, pubscores[pfid] as Dictionary<string, object>);
+                line = 5;
+
+                score.AddMatch(MatchResult.fromCurrentMatch(p));
+                pubscores[pfid] = score.toDict();
+                line = 6;
             }
-            PubScore score = new PubScore(p.nick);
-            if (pubscores.ContainsKey(pfid))
-                score = PubScore.fromDict(p.nick, pubscores[pfid] as Dictionary<string, object>);
-    
-            score.AddMatch(MatchResult.fromCurrentMatch(p));
-            pubscores[pfid] = score.toDict();
+
+            FileHelper.WriteJson(ScorePath(), pubscores);
+            line = 7;
         }
-        FileHelper.WriteJson(ScorePath(), pubscores);
+        catch (Exception ex)
+        {
+            Debug.Log($"[RankBalance.SavePlayerScores] @@@@@ ERROR @@@@@ AT LINE " + line);
+            try {
+                Debug.Log($"[RankBalance.SavePlayerScores] Exception HRESULT " + ex.HResult.ToString("X") + " type " + ex.GetType());
+                Debug.Log($"[RankBalance.SavePlayerScores] Exception message: " + ex.Message);
+                Debug.Log($"[RankBalance.SavePlayerScores] Exception trace: " + ex.StackTrace);
+            } catch (System.Exception ex2) {
+                Debug.Log($"[RankBalance.SavePlayerScores] Another exception occured inside handler, HRESULT " + ex2.HResult.ToString("X") + " type " + ex2.GetType());
+            }
+        }
     }
 
     class PubScore {
