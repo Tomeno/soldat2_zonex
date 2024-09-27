@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -66,9 +67,9 @@ public class RankBalance : Modifiable
 
             line = 5;
             // set defaults, likely overriden by LoadConfig()
-            scoreFunc = PlayerRank;
+            scoreFunc = PlayerTrueSkill;
             line = 6;
-            scoreFuncName = "rank";
+            scoreFuncName = "trueskill";
             LoadConfig();
             line = 7;
 
@@ -387,6 +388,11 @@ public class RankBalance : Modifiable
             else GameChat.ChatOrLog($"Next balance based on rankedings scores");
             scoreFunc = PlayerRank;
             scoreFuncName = "rank";
+        } else if (name.ToLower().StartsWith("trueskill")) {
+            if (interactive) GameChat.instance.ServerChat($"Next balance based on ranked TrueSkill");
+            else GameChat.ChatOrLog($"Next balance based on ranked TrueSkill");
+            scoreFunc = PlayerTrueSkill;
+            scoreFuncName = "trueskill";
         }
     }
 
@@ -519,25 +525,34 @@ public class RankBalance : Modifiable
     }
 
     // FIXME: factor the PubScore related stuff out of this, so we can actually have them for DM too.
-    void SavePlayerScores () {
-        var matchStats = MonoSingleton<Stats>.Get.stats;
-        bool isTie = TeamsTied();
-        int winningTeam = WinningTeam();
+    void SavePlayerScores ()
+    {
+        var line = 0;
+        try
+        {
+            var matchStats = MonoSingleton<Stats>.Get.stats; line = 1;
+            bool isTie = TeamsTied(); line = 2;
+            int winningTeam = WinningTeam(); line = 3;
 
-        var players = Players.Get.GetHumansNonSpectator().Where(
-            p => !playersJoinedMidGame.Contains(PlayerPFID(p))
-        );
+            var players = Players.Get.GetHumansNonSpectator().Where(
+                p => !playersJoinedMidGame.Contains(PlayerPFID(p))
+            ); line = 4;
 
-        if (players.Count() < minPlayersForScoreUpdate) {
-            Debug.Log($"[RankBalance.SavePlayerScores] NOTE: not updating scores because < {minPlayersForScoreUpdate} players played the full match");
-            return;
-        }
+            if (players.Count() < minPlayersForScoreUpdate)
+            {
+                Debug.Log(
+                    $"[RankBalance.SavePlayerScores] NOTE: not updating scores because < {minPlayersForScoreUpdate} players played the full match");
+                return;
+            }
 
         foreach (Player p in players) {
             string pfid = PlayerPFID(p);
             if (pfid == "") {
                 Debug.Log($"[RankBalance.SavePlayerScores] WARNING: player '{p.nick}' has no account ID");
                 continue;
+                    Debug.Log($"[RankBalance.SavePlayerScores] WARNING: player '{p.nick}' has no account ID");
+                    continue;
+                }
             }
             PubScore score = new PubScore(p.nick);
             if (pubscores.ContainsKey(pfid))
@@ -635,26 +650,59 @@ public class RankBalance : Modifiable
             return res;
         }
 
-        public static MatchResult fromDict(Dictionary<string, object> obj) {
+        public static MatchResult fromDict(Dictionary<string, object> obj)
+        {
             var res = new MatchResult();
-            res.match_score = System.Convert.ToInt32(obj["match_score"]);
-            res.matches = System.Convert.ToInt32(obj["matches"]);
-            res.kills   = System.Convert.ToInt32(obj["kills"]);
-            res.deaths  = System.Convert.ToInt32(obj["deaths"]);
-            res.wins    = System.Convert.ToInt32(obj["wins"]);
-            res.loses   = System.Convert.ToInt32(obj["loses"]);
+            var line = 0;
+            try
+            {
+                res.match_score = System.Convert.ToInt32(obj["match_score"]); line = 1;
+                res.matches = System.Convert.ToInt32(obj["matches"]); line = 2;
+                res.kills = System.Convert.ToInt32(obj["kills"]); line = 3;
+                res.deaths = System.Convert.ToInt32(obj["deaths"]); line = 4;
+                res.wins = System.Convert.ToInt32(obj["wins"]); line = 5;
+                res.loses = System.Convert.ToInt32(obj["loses"]); line = 6;
+            }
+            catch (Exception ex)
+            {
+                Debug.Log($"[RankBalance.fromDict] @@@@@ ERROR @@@@@ AT LINE " + line);
+                try {
+                    Debug.Log($"[RankBalance.fromDict] Exception HRESULT " + ex.HResult.ToString("X") + " type " + ex.GetType());
+                    Debug.Log($"[RankBalance.fromDict] Exception message: " + ex.Message);
+                    Debug.Log($"[RankBalance.fromDict] Exception trace: " + ex.StackTrace);
+                } catch (System.Exception ex2) {
+                    Debug.Log($"[RankBalance.fromDict] Another exception occured inside handler, HRESULT " + ex2.HResult.ToString("X") + " type " + ex2.GetType());
+                }
+            }
             return res;
         }
 
         public Dictionary<string,object> toDict() {
-            return new Dictionary<string,object>() {
-                {"matches",matches},
-                {"match_score",match_score},
-                {"kills",kills},
-                {"deaths",deaths},
-                {"wins",wins},
-                {"loses",loses},
-            };
+            try
+            {
+                return new Dictionary<string, object>()
+                {
+                    { "matches", matches },
+                    { "match_score", match_score },
+                    { "kills", kills },
+                    { "deaths", deaths },
+                    { "wins", wins },
+                    { "loses", loses }
+                };
+            }
+            catch (Exception ex)
+            {
+                Debug.Log($"[RankBalance.toDict] @@@@@ ERROR @@@@@");
+                try {
+                    Debug.Log($"[RankBalance.toDict] Exception HRESULT " + ex.HResult.ToString("X") + " type " + ex.GetType());
+                    Debug.Log($"[RankBalance.toDict] Exception message: " + ex.Message);
+                    Debug.Log($"[RankBalance.toDict] Exception trace: " + ex.StackTrace);
+                } catch (System.Exception ex2) {
+                    Debug.Log($"[RankBalance.toDict] Another exception occured inside handler, HRESULT " + ex2.HResult.ToString("X") + " type " + ex2.GetType());
+                }
+            }
+
+            return null;
         }
 
         public void Add(MatchResult other) {
@@ -720,7 +768,7 @@ public class RankBalance : Modifiable
         if (!pubscores.ContainsKey(pfid)) return 0;
         var s = PubScore.fromDict(p.nick, pubscores[pfid] as Dictionary<string, object>);
         float score = s.ComputeScore();
-        return s.ComputeScore();
+        return score;
     }
 
     float PlayerRank(Player p) {
@@ -730,6 +778,59 @@ public class RankBalance : Modifiable
         // FIXME: this value is set a couple seconds after a player has joined (API latency is bad...), it returns 0 in the meantime.
         //if (p.IsBot()) return 0f;
         return (float)(byte)p.props["rank"] + (p.IsBot() ? 0f : 3f);
+    }
+    
+    public static float TrueSkillBase = 10f;
+    public static float TrueSkillDefault = 4f;
+    public static float TrueSkillBot = 0f;
+    float CalculateSkillEstimate(Player p)
+    {
+        string pfid = PlayerPFID(p);
+        if (!pubscores.ContainsKey(pfid)) return TrueSkillDefault + TrueSkillBase;
+        var s = PubScore.fromDict(p.nick, pubscores[pfid] as Dictionary<string, object>);
+        if (s.total.matches > 3)
+        {
+            float scorePerMatch = s.total.match_score / (float)s.total.matches;
+            return Math.Max((scorePerMatch * 2f) - 33f, 0f) + TrueSkillBase;
+        }
+
+        return TrueSkillDefault + TrueSkillBase;
+    }
+    
+    float PlayerTrueSkill(Player p) {
+        if (trueskillRatings.Count > 0)
+        {
+            if (p.IsBot())
+            {
+                return TrueSkillBot;
+            }
+            else
+            {
+                string pfid = PlayerPFID(p);
+                if (trueskillRatings.TryGetValue(pfid, out var plrRating))
+                {
+                    if (plrRating.totalGames > 4)
+                    {
+                        return (float)Math.Max(plrRating.lowerSkillEstimate, 0f) + TrueSkillBase;
+                    }
+                    return CalculateSkillEstimate(p);
+                }
+                return TrueSkillDefault + TrueSkillBase;
+            }
+        }
+        else // if we haven't loaded trueskill yet
+        {
+            if (p.IsBot())
+            {
+                return TrueSkillBot;
+            }
+            var rank = (byte)p.props["rank"];
+            if (rank == 0)
+            {
+                return TrueSkillDefault + TrueSkillBase;
+            }
+            return (4f * rank) + TrueSkillBase;
+        }
     }
 
     bool IsAdmin(Player p) { 
@@ -757,4 +858,32 @@ public class RankBalance : Modifiable
 
     string ScorePath () { return $"{basePath}/scores_by_mode/{MatchGamemode()}.json"; }
     string ConfigPath () { return $"{basePath}/config.json"; }
+    
+    //List<Leaderboards.PlayerRating> playersRatings = new List<Leaderboards.PlayerRating>();
+    Dictionary<string, Leaderboards.PlayerRating> trueskillRatings = new Dictionary<string, Leaderboards.PlayerRating>();
+    
+    private IEnumerator FetchTrueSkillRatings()
+    {
+        string playlistCode = "CTF-Standard-6";
+        yield return MatchmakingAPI.Ratings(playlistCode, (response) =>
+        {
+            try
+            {
+                var playersRatings = new List<Leaderboards.PlayerRating>();
+                bool flag = MainMenuLeaderboards.ParseRatings(response, out playersRatings);
+                foreach (var rating in playersRatings)
+                {
+                    trueskillRatings.Add(rating.playfabId, rating);
+                }
+                Debug.Log($"[RankBalance.FetchTrueSkillRatings] Successfully fetched and parsed {playersRatings.Count} ratings.");
+            }
+            catch (System.Exception ex)
+            {
+                Debug.Log($"[RankBalance.FetchTrueSkillRatings] Error parsing ratings: {ex.Message}");
+            }
+        }, (error) =>
+        {
+            Debug.Log($"[RankBalance.FetchTrueSkillRatings] Error fetching ratings: {error.message}");
+        });
+    }
 }
