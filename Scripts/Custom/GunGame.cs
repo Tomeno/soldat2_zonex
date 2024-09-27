@@ -173,7 +173,7 @@ public class GunGame : MonoBehaviour
             {
                 status += " losing" + " -" + pointsToLead;
             }
-            status += " <color=cyan>Next: " + nextWep + "</color>";
+            status += " <color=#00FFFF>Next: " + nextWep + "</color>";
             status += "</size>";
         }
 
