@@ -770,9 +770,6 @@ public class SnailBotsX: MonoBehaviour
 			mouseCurrent += mouseMovement;
 		}
 		
-		
-		public int resetNavTimer = 0;
-		
 		private bool isDeathmatch = false;
 		private NavX.NavPoint wpDeathmatch = null;
 		private Stopwatch wpDmWatch = new Stopwatch();
@@ -1035,12 +1032,10 @@ public class SnailBotsX: MonoBehaviour
 			}
 			Vector3 navTargetPosition = NULLVEC;
 			Vector2 gotoPosition = NULLVEC;
-			
-			if (resetNavTimer == 0) {
+
+			if (navCurrentWaypoint != null && (navCurrentWaypoint.pos - cpos).sqrMagnitude > 9)
+			{
 				ResetNav();
-				resetNavTimer = rand.Next(50, 100);
-			} else {
-				resetNavTimer--;
 			}
 			
 			if(!isDeathmatch) {
