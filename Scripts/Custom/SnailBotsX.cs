@@ -1513,10 +1513,6 @@ public class SnailBotsX: MonoBehaviour
 				currentTargetDist = targetDist;
 			}
 			
-			//if (!(plrToKill is null) && plrToKill != lastPlrToKill) {
-			//	GameChat.instance.ServerChat("<color=#FEFEFE>[" + plrToControl.nick + "] My new target is " + plrToKill.nick + "!</color>");
-			//}
-			
 			lineReached = -403;
 			
 			if(isDeathmatch) {
@@ -1671,7 +1667,6 @@ public class SnailBotsX: MonoBehaviour
 		Eventor.AddListener(Events.Player_Joined, OnPlayerJoined);
         Eventor.AddListener(Events.Player_Left, OnPlayerLeft);
 		Eventor.AddListener(Events.Died, OnDied);
-		Eventor.AddListener(Events.Bot_Assigned, OnBotAssign);
 	}
 	
 	private void ShowFlags() {
@@ -1686,7 +1681,6 @@ public class SnailBotsX: MonoBehaviour
         Eventor.RemoveListener(Events.Player_Left, OnPlayerLeft);
 		Eventor.RemoveListener(Events.Died, OnDied);
 		Eventor.RemoveListener(Events.Player_Joined, OnPlayerJoinedLocal);
-		Eventor.RemoveListener(Events.Bot_Assigned, OnBotAssign);
 		NavX.ResetGlobal();
 	}
 	
@@ -2002,30 +1996,6 @@ public class SnailBotsX: MonoBehaviour
 		}
 		
 		snailBots.Add(new SnailBot(player, hisFlag, theirFlag));
-	}
-	
-	private void OnBotAssign(IGameEvent ev)
-	{
-		BaseGameEvent bge = ev as BaseGameEvent;
-		foreach (var p in Teal.Players.Get.GetBots())
-		{
-			/*if (p.controlled.gameObject != bge.Sender)
-				continue;
-			Debug.Log("Adding SnailBot for " + p);
-			var go = p.controlled.gameObject;
-			Debug.Log("GostekBot: " + go.GetComponent<GostekBot>());
-			Debug.Log("GostekBot.Brain: " + go.GetComponent<GostekBot>().brain);
-			Debug.Log("StandardBrain: " + go.GetComponent<StandardBrain>());
-			Debug.Log("HumanBrain: " + go.GetComponent<HumanBrain>());
-			Debug.Log("HumanBrain.Brain: " + go.GetComponent<HumanBrain>().brain);*/
-			/*var bot = FindSnailBotForPlayer(p);
-			if (bot == null)
-				AddSnailBotForPlayer(p);*/
-		}
-		/*var go = bge.Sender.GetComponent<GostekBot>();
-		var gc = go.gameObject.GetComponent<GostekControls>();
-		if (FindSnailBotForPlayer() == null)
-			AddSnailBotForPlayer(gpe.Player);*/
 	}
 	
 	public SnailBot FindSnailBotForPlayer(Player player) {
