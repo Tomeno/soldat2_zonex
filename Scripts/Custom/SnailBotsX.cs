@@ -1203,7 +1203,7 @@ public class SnailBotsX: MonoBehaviour
 					float overAimFactor = toKillTarget.magnitude / 12.0f;
 					
 					killTargetDistance = RayCastDistance(cpos, toKillTarget, 500f);
-					if(killTargetDistance > 60)
+					if(killTargetDistance > 50)
 						killTargetDistance = -1;
 					
 					if(amIFlagger)
