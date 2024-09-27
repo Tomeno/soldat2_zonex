@@ -68,6 +68,7 @@
     </ItemGroup>
     <ItemGroup>
       <Compile Include="Scripts\Custom\AsymmetricMapFix.cs" />
+      <Compile Include="Scripts\Custom\GunGame.cs" />
       <Compile Include="Scripts\Custom\Infiltration.cs" />
       <Compile Include="Scripts\Custom\NavDbg.cs" />
       <Compile Include="Scripts\Custom\RankBalance.cs" />
@@ -79,6 +80,7 @@
       <Content Include="Modifiers\Custom\ZoneX.json" />
       <Content Include="Modifiers\Custom\BotsX.json" />
       <Content Include="README" />
+      <Content Include="Rules\Custom\GunGame.json" />
       <Content Include="Rules\Custom\Infiltration.json" />
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
