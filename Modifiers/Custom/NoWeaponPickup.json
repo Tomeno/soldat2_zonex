@@ -1,0 +1,31 @@
+{
+  "Objects": {
+    "Gostek": {
+      "GostekPickup": {
+        "AllowPrimaryDrop": false,
+        "AllowSecondaryDrop": false,
+        "AllowPrimaryPickup": false,
+        "AllowSecondaryPickup": false,
+        "Allowed": [
+          "PlaceholderTag"
+        ],
+        "UnAllowed": [
+          "Weapon"
+        ],
+        "AutoPickupIfEmpty": false,
+        "AutoPickupMelee": false,
+        "AutoPickupIfSecondary": false,
+        "DropVelocity": 14.0,
+        "FirstDropSlot": 0,
+        "SecsToFullThrow": 0.33
+      }
+    }
+  },
+  "Meta": {
+    "Description": "NoWeaponPickup",
+    "Author": "Tomeno",
+    "Version": "N/A",
+    "Game": "Soldat2",
+    "GameVersion": "0.8.7"
+  }
+}

@@ -87,36 +87,6 @@
     "Condition": "players >= 6"
   },
   {
-    "Rules": "Deathmatch",
-    "Level": "dm_arena",
-    "Modifiers": ["BotsX"],
-    "Condition": "players < 6"
-  },
-  {
-    "Rules": "Deathmatch",
-    "Level": "dm_arena2",
-    "Modifiers": ["BotsX"],
-    "Condition": "players < 6"
-  },
-  {
-    "Rules": "Deathmatch",
-    "Level": "dm_rogue",
-    "Modifiers": ["BotsX"],
-    "Condition": "players < 6"
-  },
-  {
-    "Rules": "Domination",
-    "Level": "dom_stronghold",
-    "Modifiers": ["BotsX"],
-    "Condition": "players > 12"
-  },
-  {
-    "Rules": "Domination",
-    "Level": "dom_silo",
-    "Modifiers": ["BotsX"],
-    "Condition": "players > 12"
-  },
-  {
     "Rules": "CaptureTheFlag",
     "Level": "ctf_guardian",
     "Modifiers": ["BotsX"],
@@ -127,18 +97,6 @@
     "Level": "ctf_limbo",
     "Modifiers": ["BotsX"],
     "Condition": "players >= 6"
-  },
-  {
-    "Rules": "CaptureTheFlag",
-    "Level": "ctf_division",
-    "Modifiers": ["BotsX"],
-    "Condition": "players >= 6"
-  },
-  {
-    "Rules": "Deathmatch",
-    "Level": "dm_emblem",
-    "Modifiers": ["BotsX"],
-    "Condition": "players <= 6"
   },
   {
     "Rules": "CaptureTheFlag",
@@ -180,7 +138,7 @@
     "Rules": "CaptureTheFlag",
     "Level": "ctf_anthill",
     "Modifiers": ["BotsX"],
-    "Condition": "players >= 4"
+    "Condition": "players <= 6"
   },
   {
     "Rules": "CaptureTheFlag",
@@ -204,48 +162,24 @@
     "Rules": "CaptureTheFlag",
     "Level": "ctf_spark",
     "Modifiers": ["BotsX"],
-    "Condition": "players >= 2"
+    "Condition": "players <= 6"
   },
   {
-    "Rules": "Deathmatch",
+    "Rules": "GunGame",
     "Level": "dm_gear",
-    "Modifiers": ["BotsX"],
-    "Condition": "players < 4"
+    "Modifiers": ["BotsX", "NoWeaponPickup"],
+    "Condition": "players < 8"
   },
   {
-    "Rules": "Deathmatch",
+    "Rules": "GunGame",
     "Level": "dm_lab",
-    "Modifiers": ["BotsX"],
-    "Condition": "players < 4"
+    "Modifiers": ["BotsX", "NoWeaponPickup"],
+    "Condition": "players < 8"
   },
   {
-    "Rules": "Deathmatch",
-    "Level": "dm_rift",
-    "Modifiers": ["BotsX"],
-    "Condition": "players < 6"
-  },
-  {
-    "Rules": "Deathmatch",
-    "Level": "dm_solstice",
-    "Modifiers": ["BotsX"],
-    "Condition": "players < 6"
-  },
-  {
-    "Rules": "Deathmatch",
-    "Level": "dm_soldat",
-    "Modifiers": ["BotsX"],
-    "Condition": "players < 6"
-  },
-  {
-    "Rules": "Deathmatch",
-    "Level": "dm_stratum",
-    "Modifiers": ["BotsX"],
-    "Condition": "players < 6"
-  },
-  {
-    "Rules": "Deathmatch",
+    "Rules": "GunGame",
     "Level": "dm_zero",
-    "Modifiers": ["BotsX"],
-    "Condition": "players < 6"
+    "Modifiers": ["BotsX", "NoWeaponPickup"],
+    "Condition": "players < 8"
   }
 ]
