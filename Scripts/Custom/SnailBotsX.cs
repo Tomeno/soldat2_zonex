@@ -2009,6 +2009,23 @@ public class SnailBotsX: MonoBehaviour
 		BaseGameEvent bge = ev as BaseGameEvent;
 		foreach (var p in Teal.Players.Get.GetBots())
 		{
+			/*if (p.controlled.gameObject != bge.Sender)
+				continue;
+			Debug.Log("Adding SnailBot for " + p);
+			var go = p.controlled.gameObject;
+			Debug.Log("GostekBot: " + go.GetComponent<GostekBot>());
+			Debug.Log("GostekBot.Brain: " + go.GetComponent<GostekBot>().brain);
+			Debug.Log("StandardBrain: " + go.GetComponent<StandardBrain>());
+			Debug.Log("HumanBrain: " + go.GetComponent<HumanBrain>());
+			Debug.Log("HumanBrain.Brain: " + go.GetComponent<HumanBrain>().brain);*/
+			/*var bot = FindSnailBotForPlayer(p);
+			if (bot == null)
+				AddSnailBotForPlayer(p);*/
+		}
+		/*var go = bge.Sender.GetComponent<GostekBot>();
+		var gc = go.gameObject.GetComponent<GostekControls>();
+		if (FindSnailBotForPlayer() == null)
+			AddSnailBotForPlayer(gpe.Player);*/
 	}
 	
 	public SnailBot FindSnailBotForPlayer(Player player) {
