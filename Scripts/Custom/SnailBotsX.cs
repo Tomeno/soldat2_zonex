@@ -19,7 +19,6 @@ using System.Diagnostics;
 using Debug = UnityEngine.Debug;
 using Random = System.Random;
 
-
 // ReSharper disable once CheckNamespace
 public class SnailBotsX: MonoBehaviour
 {
@@ -437,7 +436,7 @@ public class SnailBotsX: MonoBehaviour
                     }
                 }
             }
-
+			
             AllPoints = new List<NavPoint>();
             // Remove points with 0 neighbors
             for (int x = 0; x < PointsX; x++)
@@ -456,6 +455,74 @@ public class SnailBotsX: MonoBehaviour
 		                    point.neighbors = GetNeigborsDist(point);
 		                    AllPoints.Add(point);
 	                    }
+                    }
+                }
+            }
+            
+            // Collect all player spawn points
+            List<Vector2> spawnPoints = new List<Vector2>();
+            foreach (Respawn res in Respawn._list)
+            {
+                if (!res)
+                    continue;
+                if (res.respawnPrefab != "Gostek")
+                    continue;
+                spawnPoints.Add(res.transform.position);
+            }
+
+            // Flood fill from player spawns
+            HashSet<NavPoint> reachablePoints = new HashSet<NavPoint>();
+            Queue<NavPoint> queue = new Queue<NavPoint>();
+
+            // Initialize the queue with the nearest points to the spawn points
+            foreach (Vector2 spawnPoint in spawnPoints)
+            {
+                NavPoint startPoint = GetNearestPoint(spawnPoint);
+                if (startPoint != null)
+                {
+                    queue.Enqueue(startPoint);
+                    reachablePoints.Add(startPoint);
+                }
+            }
+
+            // Perform the flood fill
+            while (queue.Count > 0)
+            {
+                NavPoint current = queue.Dequeue();
+                foreach (var (neighbor, dist) in GetNeigborsDist(current))
+                {
+                    if (!reachablePoints.Contains(neighbor))
+                    {
+                        reachablePoints.Add(neighbor);
+                        queue.Enqueue(neighbor);
+                    }
+                }
+            }
+
+            // Remove all points that are not reachable
+            for (int x = 0; x < PointsX; x++)
+            {
+                for (int y = 0; y < PointsY; y++)
+                {
+                    NavPoint point = Grid[x, y];
+                    if (point != null && !reachablePoints.Contains(point))
+                    {
+                        Grid[x, y] = null;
+                    }
+                }
+            }
+
+            // Rebuild the AllPoints list
+            AllPoints.Clear();
+            for (int x = 0; x < PointsX; x++)
+            {
+                for (int y = 0; y < PointsY; y++)
+                {
+                    NavPoint point = Grid[x, y];
+                    if (point != null)
+                    {
+                        point.neighbors = GetNeigborsDist(point);
+                        AllPoints.Add(point);
                     }
                 }
             }
@@ -486,8 +553,7 @@ public class SnailBotsX: MonoBehaviour
             var fScore = new Dictionary<NavPoint, float> { [start] = Heuristic(start, goal) };
             PriorityQueue<NavPoint> openSet = new PriorityQueue<NavPoint>();
             openSet.Enqueue(start, fScore[start]);
-            
-            //Debug.Log("Path start");
+
             while (openSet.Count > 0)
             {
                 var current = openSet.Dequeue();
@@ -526,7 +592,7 @@ public class SnailBotsX: MonoBehaviour
         }
     }
 	
-	class SnailBot {
+	public class SnailBot {
 		const int IDX_RIGHT = 0;
 		const int IDX_LEFT = 1;
 		const int IDX_DOWN = 2;
@@ -562,8 +628,8 @@ public class SnailBotsX: MonoBehaviour
 		const int IDX_OUT_AIMY = 5;
 		const int IDX_OUT_FIRE = 6;
 		
-		private float[] values = new float[22];
-		private float[] outputs = new float[7];
+		public float[] values = new float[22];
+		public float[] outputs = new float[7];
 		
 		
 		// Basic vectors!
@@ -584,8 +650,8 @@ public class SnailBotsX: MonoBehaviour
 		private Vector2 V_UP_LEFT2 = new Vector2(-2, 1);
 		private Vector2 V_UP_RIGHT2 = new Vector2(2, 1);
 		
-		private string[] valueNames = new string[22];
-		private string[] outputNames = new string[7];
+		public string[] valueNames = new string[22];
+		public string[] outputNames = new string[7];
 		
 		private RaycastHit2D[] raycastResults = new RaycastHit2D[2];
 		
@@ -605,36 +671,6 @@ public class SnailBotsX: MonoBehaviour
 		const int SMODE_GET_THEIR_FLAG = 1;
 		
 		private int currentMode = -1;
-		
-		private class PriorityQueue<T> {
-			private List<KeyValuePair<T, float>> elements = new List<KeyValuePair<T, float>>();
-
-			public int Count {
-				get { return elements.Count; }
-			}
-
-			public void Enqueue(T item, float priority) {
-				elements.Add(new KeyValuePair<T, float>(item, priority));
-			}
-
-			public T Dequeue() {
-				int bestIndex = 0;
-
-				for (int i = 0; i < elements.Count; i++) {
-					if (elements[i].Value < elements[bestIndex].Value) {
-						bestIndex = i;
-					}
-				}
-
-				T bestItem = elements[bestIndex].Key;
-				elements.RemoveAt(bestIndex);
-				return bestItem;
-			}
-
-			public bool Contains(T item) {
-				return elements.Exists(x => x.Key.Equals(item));
-			}
-		}
 		
 		public Vector3 navFinalTarget = Vector3.zero;
 		public NavX.NavPoint navTargetWaypoint = null;
@@ -688,6 +724,16 @@ public class SnailBotsX: MonoBehaviour
 			// Funnel
 			var currentTarget = nextWpPos;
 			var rayResults = new RaycastHit2D[32];
+
+			{
+				var delta = (Vector2)navFinalTarget - playerPos;
+				int hits = Physics2D.RaycastNonAlloc(playerPos, delta.normalized, rayResults, delta.magnitude);
+				if (NavX.CheckHits(hits, rayResults))
+				{
+					return navFinalTarget;
+				}
+			}
+			
 			for (int i = 0; i < Math.Min(navCurrentPath.Count, 16); i++)
 			{
 				NavX.NavPoint targ = navCurrentPath[i];
@@ -842,6 +888,59 @@ public class SnailBotsX: MonoBehaviour
 			if(hits > 0)
 				return (Vector2)raycastResults[0].point;
 			return null;
+		}
+
+
+		private HumanBrain humanBrain;
+		private GostekBot gostekBot;
+		private bool brainInited;
+		public void SetupDecision()
+		{
+			try
+			{
+				if (brainInited && humanBrain && gostekBot && gostekBot.brain?.globals != null && gostekBot.brain.list.Count > 0)
+					return;
+				
+				var player = plrToControl;
+				if (player.IsDead() || !player.controlled || !player.controlled.gameObject)
+					return;
+			
+				if (!humanBrain)
+				{
+					brainInited = false;
+					humanBrain = player.controlled.gameObject.GetComponent<HumanBrain>();
+					if (!humanBrain)
+						return;
+				}
+
+				if (!gostekBot)
+				{
+					brainInited = false;
+					gostekBot = player.controlled.gameObject.GetComponent<GostekBot>();
+					if (!gostekBot)
+						return;
+				}
+
+				if (gostekBot.brain?.globals == null)
+				{
+					brainInited = false;
+					return;
+				}
+
+				if (gostekBot.brain.list.Count > 0)
+				{
+					brainInited = true;
+					return;
+				}
+				
+				var dec = new BotsXDecision(gostekBot.brain, humanBrain);
+				gostekBot.brain.AddDecision("BotsXDecision", dec);
+				brainInited = true;
+			}
+			catch (Exception e)
+			{
+				Debug.Log("[BotsX.SetupDecision] Caught exception of type " + e.GetType());
+			}
 		}
 		
 		public void FixedUpdate() {
@@ -1149,14 +1248,14 @@ public class SnailBotsX: MonoBehaviour
 			
 			lineReached = 8;
 			
-			if (waitForJets) {
+			/*if (waitForJets) {
 				if (c.GetComponent<GostekJets>().jetsAmount <= 0.9 && values[IDX_GOSTEK_GROUNDED] >= 0.99) {
 					return;
 				}
 				else {
 					waitForJets = false;
 				}
-			}
+			}*/
 			
 			if(gotoPosition.x < cpos.x) {
 				hAxis = -1.0f;
@@ -1268,7 +1367,7 @@ public class SnailBotsX: MonoBehaviour
 				if (Math.Abs((double)cpos.x - (double)gotoPosition.x) <= 10) {
 					// Ok, so we are under your gotoPosition?
 					if (cpos.y < gotoPosition.y) {
-						if (Math.Abs((double)cpos.x - (double)gotoPosition.x) <= 6)
+						if (Math.Abs((double)cpos.x - (double)gotoPosition.x) <= 1)
 							c.SetAxis(Axis.H, 0.0f); // stop then I guess
 						
 						if(c.GetComponent<GostekJets>().jetsAmount < 0.2f) {
@@ -1303,9 +1402,42 @@ public class SnailBotsX: MonoBehaviour
 				var aimDelta = aimWorld - cpos;
 				var aimingRight = aimDelta.x > 0;
 				var targetRight = gotoDelta.x > 0;
-				var match = (aimingRight == targetRight) ^ gm.v.supermanJetInverted;
-				if (!match)
+				var matchX = gm.v.supermanJetInverted ? (aimingRight != targetRight) : (aimingRight == targetRight);
+				var targetDown = gotoDelta.normalized.y < -0.33;
+				var targetUp = gotoDelta.normalized.y > 0.33;
+				var aimingDown = aimDelta.y < -0.33;
+				var aimingUp = aimDelta.y > 0.33;
+				var failDown = (gm.v.supermanJetInverted ? aimingDown : aimingUp) && targetDown;
+				var failUp = (gm.v.supermanJetInverted ? aimingUp : aimingDown) && targetUp;
+				//var aimingRight = aimDelta.x > 0;
+				//var targetRight = gotoDelta.x > 0;
+				if (!matchX || failUp || failDown)
 					c.SetKey(Key.Superman, pressed: true);
+				if (failDown)
+					doJetFor = 0;
+			}
+			
+			if (gm.v.grounded && gm.v.crouch)
+			{
+				c.SetKey(Key.Crouch, pressed: false);
+				c.SetKey(Key.Jets, pressed: false);
+				c.SetKey(Key.Jump, pressed: true);
+			}
+
+			var gj = c.GetComponent<GostekJets>();
+			
+			if (gj.jetsAmount <= 0)
+			{
+				waitForJets = true;
+			}
+			
+			if (waitForJets) {
+				if (gj.jetsAmount <= 0.9) {
+					c.SetKey(Key.Jets, pressed: false);
+				}
+				else {
+					waitForJets = false;
+				}
 			}
 			
 			lineReached = 13;
@@ -1539,6 +1671,7 @@ public class SnailBotsX: MonoBehaviour
 		Eventor.AddListener(Events.Player_Joined, OnPlayerJoined);
         Eventor.AddListener(Events.Player_Left, OnPlayerLeft);
 		Eventor.AddListener(Events.Died, OnDied);
+		Eventor.AddListener(Events.Bot_Assigned, OnBotAssign);
 	}
 	
 	private void ShowFlags() {
@@ -1553,6 +1686,7 @@ public class SnailBotsX: MonoBehaviour
         Eventor.RemoveListener(Events.Player_Left, OnPlayerLeft);
 		Eventor.RemoveListener(Events.Died, OnDied);
 		Eventor.RemoveListener(Events.Player_Joined, OnPlayerJoinedLocal);
+		Eventor.RemoveListener(Events.Bot_Assigned, OnBotAssign);
 		NavX.ResetGlobal();
 	}
 	
@@ -1565,10 +1699,33 @@ public class SnailBotsX: MonoBehaviour
 		SnailBot rsb = snailBots[rand.Next(snailBots.Count)];
 		GameChat.instance.ServerChat("<color=#FEFEFE>[" + rsb.plrToControl.nick + "] " + msg + "</color>");
 	}
-	
+
+	private void SendBotEmote(Player bot, int index)
+	{
+		Pump.temp.Clear();
+		Pump.temp.WriteUShort(bot.id);
+		Pump.temp.WriteInt(index);
+		MonoSingleton<GameServer>.Get.Send(Packets.Emoticon, Pump.temp.Pack(), SendFlags.Reliable | SendFlags.Self);
+	}
+
+	private int[] killEmojis = {9, 12, 14, 17};
+	private int[] deathEmojis = {6, 7, 10, 11, 15, 13};
 	private void OnDied(IGameEvent ev) {
-		if(snailBots.Count < 1)
+		if(!Net.IsServer || snailBots.Count < 1)
 			return;
+		
+		GlobalDieEvent e = ev as GlobalDieEvent;
+		var ownerControls = ev.Sender.GetComponent<Controls>();
+		if (e.DamagePlayer.IsBot())
+		{
+			if (rand.NextDouble() < 0.25)
+				SendBotEmote(e.DamagePlayer, killEmojis[rand.Next(0, killEmojis.Length)]);
+		}
+		if (ownerControls && ownerControls.player && ownerControls.IsBot())
+		{
+			if (rand.NextDouble() < 0.25)
+				SendBotEmote(ownerControls.player, deathEmojis[rand.Next(0, deathEmojis.Length)]);
+		}
 	}
 	
 	private void OnPlayerJoinedLocal(IGameEvent ev) {
@@ -1599,10 +1756,19 @@ public class SnailBotsX: MonoBehaviour
 	}
 	
 	private void OnChat(Player p, string msg) {
-		if(msg == "!position") {
+		/*if (msg == "!position") {
 			Vector2 pos = Players.Get.GetHumans()[0].controlled.transform.position;
 			GameChat.ChatOrLog("Your position is " + pos.ToString() + " " + (Map.Get.scale.x*Map.Get.width).ToString() + "," + Map.Get.height.ToString());
 		}
+		if (msg.StartsWith("!emo "))
+		{
+			var sub = msg.Substring(5);
+			var parsed = int.Parse(sub);
+			foreach (var b in snailBots)
+			{
+				SendBotEmote(b.plrToControl, parsed);
+			}
+		}*/
 	}
 	
 	private void DrawDottedLine(Vector2 start, Vector2 end, int count = 20) {
@@ -1680,6 +1846,23 @@ public class SnailBotsX: MonoBehaviour
 					return;
 
 				SnailBot bot = FindSnailBotForPlayer(camera.Target.player);
+
+				{
+					GUI.skin.label.normal.textColor = new Color(1f, 1f, 1f, 1f);
+					for (var i = 0; i < bot.values.Length; i++)
+					{
+						var val = bot.values[i];
+						var name = bot.valueNames[i];
+						GUI.Label(new Rect(100, 40 + i * 30, 500, 500), i + " : " + name + " : " + val);
+					}
+					for (var i = 0; i < bot.outputs.Length; i++)
+					{
+						var val = bot.outputs[i];
+						var name = bot.outputNames[i];
+						GUI.Label(new Rect(300, 40 + i * 30, 500, 500), i + " : " + name + " : " + val);
+					}
+				}
+				
 				line = 5;
 				if (bot != null)
 				{
@@ -1807,6 +1990,7 @@ public class SnailBotsX: MonoBehaviour
 	}
 	
 	private void AddSnailBotForPlayer(Player player) {
+		Debug.Log("Adding SnailBot for " + player);
 		Flag hisFlag = null;
 		Flag theirFlag = null;
 		
@@ -1820,15 +2004,25 @@ public class SnailBotsX: MonoBehaviour
 		snailBots.Add(new SnailBot(player, hisFlag, theirFlag));
 	}
 	
-	private SnailBot FindSnailBotForPlayer(Player player) {
+	private void OnBotAssign(IGameEvent ev)
+	{
+		BaseGameEvent bge = ev as BaseGameEvent;
+		foreach (var p in Teal.Players.Get.GetBots())
+		{
+	}
+	
+	public SnailBot FindSnailBotForPlayer(Player player) {
 		foreach(SnailBot snailBot in snailBots) {
 			if (snailBot.plrToControl == player)
 				return snailBot;
 		}
 		return null;
 	}
-	
-	private void Initialize() {
+
+	public static SnailBotsX Instance = null;
+	private void Initialize()
+	{
+		Instance = this;
 		UpdateVariables();
 		snailBots.Clear();
 		foreach(Player player in Players.Get.GetBots()) {
@@ -1839,14 +2033,62 @@ public class SnailBotsX: MonoBehaviour
 	
 	private void FixedUpdate() {
 		//TestCam();
-		
-		if(!Net.IsServer)
+
+		if (!Net.IsServer)
+		{
 			return;
+		}
 		
 		if(stopped)
 			return;
 		
 		foreach(SnailBot snailBot in snailBots)
-			snailBot.FixedUpdate();
+			snailBot.SetupDecision();
+	}
+}
+
+public class BotsXDecision : HumanBrain.HumanDecision
+{
+	public BotsXDecision(StandardBrain brain, HumanBrain human)
+		: base(brain, human)
+	{
+	}
+	public override void Start()
+	{
+		base.Start();
+	}
+	public override float CalculatePriority()
+	{
+		float p = 1f;
+		return p;
+	}
+	public override bool Do()
+	{
+		base.Do();
+		if (!SnailBotsX.Instance)
+			return true;
+		var sx = SnailBotsX.Instance;
+		var sb = sx.FindSnailBotForPlayer(this.controls.player);
+		if (sb == null)
+			return true;
+		sb.FixedUpdate();
+		/*
+		StandardBrain.Target t = this.globals.enemyFlag;
+		bool flag = t == null || t.obj == null;
+		bool flag2;
+		if (flag)
+		{
+			flag2 = false;
+		}
+		else
+		{
+			this.brain.Nav(this.human.navigate, t.pos, this.human.navActions, this.human.navigate.keepDistance, true);
+			this.globals.controls.SetAimWorld(this.human.LerpAim(t.pos));
+			this.human.ShootEnemy(this);
+			bool flag3 = this.brain.GetStuckInPlaceSecs() > 5f;
+			flag2 = !flag3;
+		}
+		*/
+		return true;
 	}
 }

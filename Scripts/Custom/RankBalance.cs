@@ -149,12 +149,12 @@ public class RankBalance : Modifiable
             if (p.IsBot())
             {
                 if (assignOnJoin) {
-                    int players0 = GetHumansOfTeamExcept(0, p).Count();
-                    int players1 = GetHumansOfTeamExcept(1, p).Count();
-                    if (players0 == players1)
-                        AssignTeam(p, NextTeam(WinningTeam()));
-                    else
+                    int players0 = Players.Get.GetPlayersOfTeamExcept(0, p).Count;
+                    int players1 = Players.Get.GetPlayersOfTeamExcept(1, p).Count;
+                    if (players0 != players1)
                         AssignTeam(p, players1 < players0 ? 1 : 0);
+                    // else just leave the bot alone
+                    return;
                 }
             }
             
