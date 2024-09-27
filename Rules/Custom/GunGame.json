@@ -1,0 +1,247 @@
+/*RULES
+Remove variable for default value
+All times are in seconds
+Colors are #RRGGBBAA, #RRGGBB with alpha FF or names eg. red, cyan, blue*/{
+  "Objects": {
+    "GunGame": {
+      "RulesSetup": {
+        "Name": "GunGame",
+        "Description": "Free for all with forced weapon progression",
+        "LevelsPrefixes": "dm tdm",
+        "CanManageBots": true
+      },
+      "StandardGameplay": {
+        "DamageModifier": 1.0,
+        "SelfDamageModifier": 1.0
+      },
+      "Respawning": {
+        "NoSpawnText": "No spawn point left..."
+      },
+      "StandardRespawning": {
+        "JoinDelaySecs": 2.0,
+        "RespawnSecs": 3.0,
+        "MaxRespawnSecs": 10.0,
+        "PlayerIncreaseRespawnSecs": 0.1,
+        "WeaponryPrefab": "StandardWeaponry",
+        "ShowWeaponry": false,
+        "AllowRespawning": true,
+        "RespawnType": 0
+      },
+      "Match": {
+        "MinimumPlayers": 2,
+        "ScoreLimit": 14,
+        "ScoreLimitScaleByPlayers": 0.0,
+        "MatchSecsScaleByPlayers": 0.0,
+        "MatchSecs": 240,
+        "WarmupSecs": 7,
+        "EndGameSecs": 15,
+        "MultiplayerOnlyWarmup": true,
+        "NoDamageDuringWarmup": true,
+        "NoDamageAfterEnd": true,
+        "ShowWeaponsDuringWarmup": false,
+        "ResetProperties": [
+          "score",
+          "kills",
+          "deaths"
+        ]
+      },
+      "MatchEffects": {
+        "ShowScoreboardOnEnd": true,
+        "OnWarmupText": "Warming up",
+        "OnWaitingText": "Waiting for players... {0} to go",
+        "OnStartText": "FIGHT!",
+        "OnEndedText": ""
+      },
+      "ResetMapObjects": {
+        "OnMatchStart": true,
+        "DestroyTags": [
+          "Weapon",
+          "Explosive",
+          "Bullet",
+          "Pickable",
+          "Powerup"
+        ],
+        "DestroyCarriedTags": [
+          "Flag"
+        ]
+      },
+      "ChangePlayerAppearance": {
+        "ForceTeamColors": false
+      },
+      "BotsModifier": {
+        "BotDecisions": [
+          "Patrol",
+          "EngageGun",
+          "Danger",
+          "GrabPowerup",
+          "Cover",
+          "ThrowGrenade"
+        ]
+      },
+      "Teams": {
+        "Teams": [
+          {
+            "Name": "",
+            "Color": "C1C3B7FF",
+            "Prefab": "Gostek",
+            "UseTeamUpperBodyColor": false,
+            "UpperBodyColor": "FFFFFFFF",
+            "UseTeamLowerBodyColor": false,
+            "LowerBodyColor": "FFFFFFFF",
+            "UseTeamHatColor": false,
+            "HatColor": "FFFFFFFF",
+            "UseTeamJetsColor": false,
+            "DamageScale": 1.0
+          }
+        ]
+      },
+      "SpawnLoadout": {
+        "InitialWeapon": "",
+        "InitialWeapon2": "",
+        "Grenades": 0,
+        "GrenadesMax": 0,
+        "GrenadeType": "RGD5",
+        "AmmoClips": 9999999,
+        "AmmoClipsMax": 9999999,
+        "RandomIfNotAvailable": false
+      },
+      "Available": {
+        "PrimaryWeapons": [],
+        "SecondaryWeapons": [],
+        "Items": [],
+        "DisabledWeapons": []
+      },
+      "KillsDeathsCount": {
+        "KillScore": 1,
+        "SuicideScore": -1,
+        "ScoreForTeamOnDie": 0,
+        "MultiKillSecs": 3.0
+      },
+      "DeathDrops": {
+        "Drops": [
+          {
+            "Prefab": "MedkitDrop",
+            "Timeout": 15,
+            "Probability": 0.9,
+            "Amount": 0.5,
+            "Floater": false
+          }
+        ],
+        "DropAfterSecs": 0.11,
+        "ThrowVelocity": 2.0,
+        "GrenadesAmountIsCarriedAmount": false,
+        "MedkitAmountIsKillerLoss": true,
+        "Limiter": true,
+        "OnlyIfKiller": true
+      },
+      "StandardModifier": {
+        "JetsAmount": 1.0
+      },
+      "Handicaps": {
+        "SpawnHealth": 1.1,
+        "InvincibleAfterSpawnDuration": 2.5,
+        "DecreaseOverDefaultHealthInterval": 2.0,
+        "DecreaseOverDefaultHealthAmount": 0.05,
+        "OnlyHumans": false,
+        "SkillBasedSpawnHealth": 0.5
+      },
+      "TimeOutDrops": {
+        "TimeOutSecs": 12.0
+      },
+      "RandomDrops": {
+        "FrequencySecs": 5.0,
+        "ScaleByMapSize": true,
+        "ScaleByPlayersCount": true,
+        "Drops": []
+      },
+      "HandleBases": {
+        "Style": 1,
+        "HaveSandbags": false,
+        "HaveRoofs": false,
+        "CanCapture": false,
+        "CaptureSecs": 5.0,
+        "ReverseBases": false,
+        "ReverseFlags": false,
+        "ReverseBaseRespawns": false,
+        "MinTeamPlayersForFlags": 2
+      },
+      "StandardEndConditions": {
+        "TimeLimitReached": true,
+        "WinSound": "Match:Win",
+        "LoseSound": "Match:Lose",
+        "TieSound": "Match:Tie"
+      },
+      "GostekPickup": {
+        "AllowPrimaryDrop": false,
+        "AllowSecondaryDrop": false,
+        "AllowPrimaryPickup": false,
+        "AllowSecondaryPickup": false,
+        "Allowed": [
+          "PlaceholderTag"
+        ],
+        "UnAllowed": [
+          "Weapon"
+        ],
+        "AutoPickupIfEmpty": false,
+        "AutoPickupMelee": false,
+        "AutoPickupIfSecondary": false,
+        "DropVelocity": 14.0,
+        "FirstDropSlot": 0,
+        "SecsToFullThrow": 0.33
+      },
+      "Gostek": {
+        "GostekPickup": {
+          "AllowPrimaryDrop": false,
+          "AllowSecondaryDrop": false,
+          "AllowPrimaryPickup": false,
+          "AllowSecondaryPickup": false,
+          "Allowed": [
+            "PlaceholderTag"
+          ],
+          "UnAllowed": [
+            "Weapon"
+          ],
+          "AutoPickupIfEmpty": false,
+          "AutoPickupMelee": false,
+          "AutoPickupIfSecondary": false,
+          "DropVelocity": 14.0,
+          "FirstDropSlot": 0,
+          "SecsToFullThrow": 0.33
+        }
+      },
+      "GameScript": {
+        "Scripts": [
+          "GunGame"
+        ]
+      }
+    },
+    "Gostek": {
+      "GostekPickup": {
+        "AllowPrimaryDrop": false,
+        "AllowSecondaryDrop": false,
+        "AllowPrimaryPickup": false,
+        "AllowSecondaryPickup": false,
+        "Allowed": [
+          "PlaceholderTag"
+        ],
+        "UnAllowed": [
+          "Weapon"
+        ],
+        "AutoPickupIfEmpty": false,
+        "AutoPickupMelee": false,
+        "AutoPickupIfSecondary": false,
+        "DropVelocity": 14.0,
+        "FirstDropSlot": 0,
+        "SecsToFullThrow": 0.33
+      }
+    }
+  },
+  "Meta": {
+    "Description": "vanilla",
+    "Thumbnail": "",
+    "Author": "MM",
+    "Version": "1",
+    "Game": "Soldat2",
+    "GameVersion": "0.8.71"
+  }
+}
