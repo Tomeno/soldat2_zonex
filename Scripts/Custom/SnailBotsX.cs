@@ -1011,6 +1011,8 @@ public class SnailBotsX: MonoBehaviour
 			lineReached = 1;
 			
 			GostekMovement gm = c.GetComponent<GostekMovement>();
+			if (!gm)
+				return;
 			
 			if(gm.v.superman && gm.v.grounded) {
 				//GameChat.ChatOrLog("SUPERMAN ON GROUND!!!");
