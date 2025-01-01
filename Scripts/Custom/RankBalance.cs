@@ -79,14 +79,48 @@ public class RankBalance : Modifiable
 
             string filepath = ScorePath();
             line = 9;
+            Debug.Log($"[RankBalance.Awake] Loading scores for {MatchGamemode()}");
             if (FileHelper.Exists(filepath))
+            {
                 pubscores = FileHelper.ReadJson(filepath);
+                Debug.Log($"[RankBalance.Awake] Loaded " + pubscores.Count + " pubscores");
+            }
             else
+            {
+                Debug.Log($"[RankBalance.Awake] !!!!!!!! Pubscores not loaded!!! path {filepath}");
                 pubscores = new Dictionary<string, object>();
+            }
             line = 10;
 
-            if (balanceOnStart)
-                BalanceTeams();
+            string trueskill_cache_path = $"{basePath}/trueskill_cache.json";
+            if (FileHelper.Exists(trueskill_cache_path))
+            {
+                try
+                {
+                    var cached_trueskill = FileHelper.ReadJson(trueskill_cache_path);
+                    foreach (var entry in cached_trueskill)
+                    {
+                        trueskillRatings[entry.Key] = PlayerRatingFromDict(entry.Value as Dictionary<string, object>);
+                    }
+                    
+                    Debug.Log($"[RankBalance.Awake] Loaded {trueskillRatings.Count} trueskill ratings");
+                    if (trueskillRatings.Count > 10)
+                        trueskillLoaded = true;
+                }
+                catch
+                {
+                    Debug.Log($"[RankBalance.Awake] !!!!!!!! Failed to load trueskill cache");
+                }
+            }
+            else
+            {
+                Debug.Log($"[RankBalance.Awake] !!!!!!!! no trueskill cache {trueskill_cache_path}");
+            }
+            StartCoroutine(FetchTrueSkillRatings());
+
+            //if (scoreFuncName != "trueskill" || trueskillLoaded)
+            BalanceTeams();
+            
             line = 11;
         } catch (System.Exception ex) {
             Debug.Log($"[RankBalance.Awake] @@@@@ ERROR @@@@@ AT LINE " + line);
@@ -192,13 +226,54 @@ public class RankBalance : Modifiable
 			}
 		}
     }
+    
+    /*void OnPlayerJoined(IGameEvent ev) {
+        Player p = ((GlobalPlayerEvent)ev).Player;
+
+        if (!p.IsBot()) {
+            playersJoinedMidGame.Add(PlayerPFID(p));
+            ManageFillBots();
+        }
+        else
+        {
+            int players0 = Players.Get.GetPlayersOfTeamExcept(0, p).Count;
+            int players1 = Players.Get.GetPlayersOfTeamExcept(1, p).Count;
+            if (players0 != players1)
+                AssignTeam(p, players1 < players0 ? 1 : 0);
+            // else just leave the bot alone
+            return;
+        }
+
+        var teams = GetComponent<Teams>().teams;
+        int scoreDelta = System.Math.Abs(teams[0].score - teams[1].score);
+
+        // we dont want to balance on join. or do we? only when score diff is high? when num players joined / left is high? rankdelta is high?
+        if (balanceOnPlayerChange && scoreDelta >= minScoreDeltaForRebalance) {
+            if (BalanceIfAllowed(false))
+                return;
+        }
+
+        if (assignOnJoin) {
+            int players0 = GetHumansOfTeamExcept(0, p).Count();
+            int players1 = GetHumansOfTeamExcept(1, p).Count();
+            if (players0 == players1)
+                AssignTeam(p, NextTeam(WinningTeam()));
+            else
+                AssignTeam(p, players1 < players0 ? 1 : 0);
+        }
+    }*/
 
     void OnPlayerLeft(IGameEvent ev) {
         try {
-            Player p = ((GlobalPlayerEvent)ev).Player;
-            if (!p || p.IsBot())
-                return;
             ManageFillBots();
+            Player p = ((GlobalPlayerEvent)ev).Player;
+            if (!p)
+                return;
+            if (p.IsBot())
+            {
+                BalanceBots();
+                return;
+            }
             if (balanceOnPlayerChange)
                 BalanceIfAllowed(false);
         } catch (System.Exception ex) {
@@ -219,10 +294,15 @@ public class RankBalance : Modifiable
             Player p = ((GlobalPlayerEvent)ev).Player;
             if (!p || p.IsBot())
                 return;
+            BalanceBots();
             int count = Players.Get.GetSpecators().Count();
-            if (count != currentSpectators && balanceOnPlayerChange)
+            if (count != currentSpectators /*&& balanceOnPlayerChange*/)
                 OnPlayerLeft(ev);
             currentSpectators = count;
+            /*int players0 = Players.Get.GetPlayersOfTeam(0).Count;
+            int players1 = Players.Get.GetPlayersOfTeam(1).Count;
+            if (players0 != players1)
+                BalanceBots();*/
         } catch (System.Exception ex) {
             Debug.Log($"[RankBalance.OnPlayerChangedTeam] @@@@@ ERROR @@@@@");
             try {
@@ -444,12 +524,53 @@ public class RankBalance : Modifiable
         return true;
     }
 
+
+    private bool amBalancing = false;
+    void BalanceBots()
+    {
+        if (amBalancing) return;
+        if (!Net.IsServer) return;
+        if (Teams.instance.GetTeamsCount() != 2) return;
+        amBalancing = true;
+
+        var team0 = Players.Get.GetPlayersOfTeam(0);
+        var team1 = Players.Get.GetPlayersOfTeam(1);
+        if (team0.Count == team1.Count)
+            return;
+        var bots0 = team0.Where(player => player.IsBot());
+        var bots1 = team1.Where(player => player.IsBot());
+        var diff = team0.Count - team1.Count;
+        // im writing this while im fried
+        if (diff > 0)
+        {
+            foreach (var bot in bots0)
+            {
+                AssignTeam(bot, 1);
+                diff -= 2;
+                if (diff <= 0) break;
+            }
+        }
+        else if (diff < 0)
+        {
+            foreach (var bot in bots1)
+            {
+                AssignTeam(bot, 0);
+                diff += 2;
+                if (diff >= 0) break;
+            }
+        }
+
+        amBalancing = false;
+    }
+
     int BalanceTeams(bool dryrun=false, int teamPrecedence=0) {
         // This function prioritizes team size over optimal rank distribution.
         // NOTE: balancing by rank is a https://en.wikipedia.org/wiki/Subset_sum_problem
 
         if (!Net.IsServer) return 0;
         if (Teams.instance.GetTeamsCount() != 2) return 0;
+        
+        //BalanceBots();
 
         List<Player> players = Players.Get.GetPlayersNonSpecators();
         if (!balanceBots)
@@ -545,6 +666,8 @@ public class RankBalance : Modifiable
                 return;
             }
 
+            Debug.Log($"[RankBalance.SavePlayerScores] Saving initial " + pubscores.Count + " pubscores");
+            
             foreach (Player p in players)
             {
                 string pfid = PlayerPFID(p);
@@ -553,6 +676,8 @@ public class RankBalance : Modifiable
                     Debug.Log($"[RankBalance.SavePlayerScores] WARNING: player '{p.nick}' has no account ID");
                     continue;
                 }
+                
+                Debug.Log($"[RankBalance.SavePlayerScores] Updating player " + p);
 
                 PubScore score = new PubScore(p.nick);
                 if (pubscores.ContainsKey(pfid))
@@ -564,7 +689,18 @@ public class RankBalance : Modifiable
                 line = 6;
             }
 
-            FileHelper.WriteJson(ScorePath(), pubscores);
+            Debug.Log($"[RankBalance.SavePlayerScores] Saving new " + pubscores.Count + " pubscores");
+            var timenow = DateTime.UtcNow.ToString("yyyyMMddTHHmmss");
+            FileHelper.WriteJson($"{basePath}/scores_by_mode/{MatchGamemode()}_{timenow}.json", pubscores);
+            if (pubscores.Count > 20)
+            {
+                FileHelper.WriteJson(ScorePath(), pubscores);
+                Debug.Log($"[RankBalance.SavePlayerScores] Saved " + pubscores.Count + " pubscores");
+            }
+            else
+            {
+                Debug.Log($"[RankBalance.SavePlayerScores] DID NOT SAVE " + pubscores.Count + " PUBSCORES!!!");
+            }
             line = 7;
         }
         catch (Exception ex)
@@ -807,7 +943,7 @@ public class RankBalance : Modifiable
         if (s.total.matches > 3)
         {
             float scorePerMatch = s.total.match_score / (float)s.total.matches;
-            return Math.Max((scorePerMatch * 2f) - 33f, 0f) + TrueSkillBase;
+            return Math.Max((scorePerMatch * 2.4f) - 33f, 0f) + TrueSkillBase;
         }
 
         return TrueSkillDefault + TrueSkillBase;
@@ -872,11 +1008,56 @@ public class RankBalance : Modifiable
         return Scoreboard.Get.gamemodeText.text.ToLower().Replace(" ", "_");
     }
 
-    string ScorePath () { return $"{basePath}/scores_by_mode/{MatchGamemode()}.json"; }
+    //string ScorePath () { return $"{basePath}/scores_by_mode/{MatchGamemode()}.json"; }
+    string ScorePath () { return $"{basePath}/scores_by_mode/capture_the_flag.json"; }
     string ConfigPath () { return $"{basePath}/config.json"; }
     
     //List<Leaderboards.PlayerRating> playersRatings = new List<Leaderboards.PlayerRating>();
     Dictionary<string, Leaderboards.PlayerRating> trueskillRatings = new Dictionary<string, Leaderboards.PlayerRating>();
+    private bool trueskillLoaded = false;
+
+    public static Dictionary<string, object> PlayerRatingToDict(Leaderboards.PlayerRating ranking)
+    {
+        return new Dictionary<string, object>
+        {
+            { nameof(ranking.playfabId), ranking.playfabId },
+            { nameof(ranking.mu), ranking.mu },
+            { nameof(ranking.lowerSkillEstimate), ranking.lowerSkillEstimate },
+            { nameof(ranking.tierNumber), ranking.tierNumber },
+            { nameof(ranking.tierName), ranking.tierName },
+            { nameof(ranking.nick), ranking.nick },
+            { nameof(ranking.totalGames), ranking.totalGames },
+            { nameof(ranking.wonGames), ranking.wonGames },
+            { nameof(ranking.lostGames), ranking.lostGames },
+            { nameof(ranking.tiedGames), ranking.tiedGames }
+        };
+    }
+    
+    public static Leaderboards.PlayerRating PlayerRatingFromDict(Dictionary<string, object> dict)
+    {
+        var rating = new Leaderboards.PlayerRating();
+        if (dict.ContainsKey(nameof(rating.playfabId)))
+            rating.playfabId = Convert.ToString(dict[nameof(rating.playfabId)]);
+        if (dict.ContainsKey(nameof(rating.mu)))
+            rating.mu = Convert.ToDouble(dict[nameof(rating.mu)]);
+        if (dict.ContainsKey(nameof(rating.lowerSkillEstimate)))
+            rating.lowerSkillEstimate = Convert.ToDouble(dict[nameof(rating.lowerSkillEstimate)]);
+        if (dict.ContainsKey(nameof(rating.tierNumber)))
+            rating.tierNumber = Convert.ToInt32(dict[nameof(rating.tierNumber)]);
+        if (dict.ContainsKey(nameof(rating.tierName)))
+            rating.tierName = Convert.ToString(dict[nameof(rating.tierName)]);
+        if (dict.ContainsKey(nameof(rating.nick)))
+            rating.nick = Convert.ToString(dict[nameof(rating.nick)]);
+        if (dict.ContainsKey(nameof(rating.totalGames)))
+            rating.totalGames = Convert.ToInt64(dict[nameof(rating.totalGames)]);
+        if (dict.ContainsKey(nameof(rating.wonGames)))
+            rating.wonGames = Convert.ToInt64(dict[nameof(rating.wonGames)]);
+        if (dict.ContainsKey(nameof(rating.lostGames)))
+            rating.lostGames = Convert.ToInt64(dict[nameof(rating.lostGames)]);
+        if (dict.ContainsKey(nameof(rating.tiedGames)))
+            rating.tiedGames = Convert.ToInt64(dict[nameof(rating.tiedGames)]);
+        return rating;
+    }
     
     private IEnumerator FetchTrueSkillRatings()
     {
@@ -885,13 +1066,34 @@ public class RankBalance : Modifiable
         {
             try
             {
+
+                if (response.Count > 0)
+                {
+                    for (int index = 0; index < response.Count; ++index)
+                    {
+                        Dictionary<string, object> dictionary = response[index] as Dictionary<string, object>;
+                        if (!dictionary.ContainsKey("displayName"))
+                            dictionary["displayName"] = "<EMPTY NAME>";
+                    }
+                }
+
                 var playersRatings = new List<Leaderboards.PlayerRating>();
                 bool flag = MainMenuLeaderboards.ParseRatings(response, out playersRatings);
+                var ratingsSave = new Dictionary<string, object>();
                 foreach (var rating in playersRatings)
                 {
-                    trueskillRatings.Add(rating.playfabId, rating);
+                    trueskillRatings[rating.playfabId] = rating;
+                    ratingsSave.Add(rating.playfabId, PlayerRatingToDict(rating));
                 }
+                if (scoreFuncName == "trueskill" && !trueskillLoaded)
+                {
+                    BalanceIfAllowed();
+                }
+
+                trueskillLoaded = true;
                 Debug.Log($"[RankBalance.FetchTrueSkillRatings] Successfully fetched and parsed {playersRatings.Count} ratings.");
+                FileHelper.WriteJson($"{basePath}/trueskill_cache.json", ratingsSave);
+                Debug.Log($"[RankBalance.FetchTrueSkillRatings] Successfully cached trueskill ratings.");
             }
             catch (System.Exception ex)
             {
